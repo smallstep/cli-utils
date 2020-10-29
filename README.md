@@ -12,6 +12,8 @@ Cli-utils is a collection of packages used in [smallstep](https://smallstep.com)
   authority (X.509 & SSH) & ACME server for secure automated certificate
   management, so you can use TLS everywhere & SSO for SSH.
 
+> ⚠️: Other projects should not use this package. The API can change at any time.
+
 ## Usage
 
 To add this to a project just run:
@@ -19,6 +21,3 @@ To add this to a project just run:
 ```sh
 go get go.step.sm/cli-utils
 ```
-
-| ⚠️: Other projects should not use this package. The API can change at any time. |
-| --- |
