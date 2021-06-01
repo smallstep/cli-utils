@@ -170,6 +170,16 @@ func WithX5CFile(certFile string, key interface{}) Options {
 	}
 }
 
+// WithX5CCerts returns a Options that sets the header x5c claims. This method
+// does not do any validation. Use WithX5cFile if your code does not validate
+// the input parameters.
+func WithX5CCerts(certStrs []string) Options {
+	return func(c *Claims) error {
+		c.SetHeader("x5c", certStrs)
+		return nil
+	}
+}
+
 // WithX5CInsecureFile returns a Options that sets the header x5cAllowInvalid claims.
 // The `x5c` claims can only be accessed by running a method on the jose Token
 // which validates the certificate chain before returning it. This option serves
