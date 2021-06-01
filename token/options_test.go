@@ -1,16 +1,32 @@
 package token
 
 import (
+	"encoding/base64"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/smallstep/assert"
 	"go.step.sm/crypto/jose"
+	"go.step.sm/crypto/pemutil"
 )
 
 func TestOptions(t *testing.T) {
-	empty := new(Claims)
-	now := time.Now()
+	var (
+		empty = new(Claims)
+		now   = time.Now()
+	)
+
+	certs, err := pemutil.ReadCertificateBundle("./testdata/foo.crt")
+	assert.FatalError(t, err)
+	certStrs := make([]string, len(certs))
+	for i, cert := range certs {
+		certStrs[i] = base64.StdEncoding.EncodeToString(cert.Raw)
+	}
+
+	x5cKey, err := pemutil.Read("./testdata/foo.key")
+	assert.FatalError(t, err)
+
 	tests := []struct {
 		name    string
 		option  Options
@@ -39,6 +55,8 @@ func TestOptions(t *testing.T) {
 		{"WithKid ok", WithKid("value"), &Claims{ExtraHeaders: map[string]interface{}{"kid": "value"}}, false},
 		{"WithKid fail", WithKid(""), empty, true},
 		{"WithSHA ok", WithSHA("6908751f68290d4573ae0be39a98c8b9b7b7d4e8b2a6694b7509946626adfe98"), &Claims{ExtraClaims: map[string]interface{}{"sha": "6908751f68290d4573ae0be39a98c8b9b7b7d4e8b2a6694b7509946626adfe98"}}, false},
+		{"WithX5CCerts ok", WithX5CCerts(certStrs), &Claims{ExtraHeaders: map[string]interface{}{"x5c": certStrs}}, false},
+		{"WithX5CFile ok", WithX5CFile("./testdata/foo.crt", x5cKey), &Claims{ExtraHeaders: map[string]interface{}{"x5c": certStrs}}, false},
 	}
 
 	for _, tt := range tests {

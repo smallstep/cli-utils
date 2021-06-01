@@ -165,14 +165,14 @@ func WithX5CFile(certFile string, key interface{}) Options {
 		if err != nil {
 			return errors.Wrap(err, "error validating x5c certificate chain and key for use in x5c header")
 		}
-		c.SetHeader("x5c", certStrs)
-		return nil
+		return WithX5CCerts(certStrs)(c)
 	}
 }
 
 // WithX5CCerts returns a Options that sets the header x5c claims. This method
-// does not do any validation. Use WithX5cFile if your code does not validate
-// the input parameters.
+// does not do any validation. CertStrs is a list (chain) where each index
+// is the base64 encoding of the raw cert. Use WithX5cFile if your code does not
+// require input of the input parameters.
 func WithX5CCerts(certStrs []string) Options {
 	return func(c *Claims) error {
 		c.SetHeader("x5c", certStrs)
