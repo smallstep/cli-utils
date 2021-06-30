@@ -161,7 +161,11 @@ func WithKid(s string) Options {
 // WithX5CFile returns a Options that sets the header x5c claims.
 func WithX5CFile(certFile string, key interface{}) Options {
 	return func(c *Claims) error {
-		certStrs, err := jose.ValidateX5C(certFile, key)
+		certs, err := pemutil.ReadCertificateBundle(certFile)
+		if err != nil {
+			return errors.Wrap(err, "error reading certificate")
+		}
+		certStrs, err := jose.ValidateX5C(certs, key)
 		if err != nil {
 			return errors.Wrap(err, "error validating x5c certificate chain and key for use in x5c header")
 		}
@@ -188,7 +192,11 @@ func WithX5CCerts(certStrs []string) Options {
 // NOTE: here be dragons. Use WithX5CFile unless you know what you are doing.
 func WithX5CInsecureFile(certFile string, key interface{}) Options {
 	return func(c *Claims) error {
-		certStrs, err := jose.ValidateX5C(certFile, key)
+		certs, err := pemutil.ReadCertificateBundle(certFile)
+		if err != nil {
+			return errors.Wrap(err, "error reading certificate")
+		}
+		certStrs, err := jose.ValidateX5C(certs, key)
 		if err != nil {
 			return errors.Wrap(err, "error validating x5c certificate chain and key for use in x5c header")
 		}
