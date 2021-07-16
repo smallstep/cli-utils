@@ -74,24 +74,41 @@ func WithSSH(v interface{}) Options {
 	})
 }
 
+// WithIssuedAt sets the 'iat' (IssuedAt) claim.
+func WithIssuedAt(issuedAt time.Time) Options {
+	return func(c *Claims) error {
+		c.IssuedAt = jose.NewNumericDate(issuedAt)
+		return nil
+	}
+}
+
 // WithValidity validates boundary inputs and sets the 'nbf' (NotBefore) and
-// 'exp' (expiration) options.
+// 'exp' (expiration) options. If notBefore or expiration are zero time they
+// will not be set.
 func WithValidity(notBefore, expiration time.Time) Options {
 	return func(c *Claims) error {
-		now := time.Now().UTC()
-		if expiration.Before(notBefore) {
-			return errors.Errorf("nbf < exp: nbf=%v, exp=%v", notBefore, expiration)
+		now := timeNowUTC()
+		if !notBefore.IsZero() {
+			requestedDelay := notBefore.Sub(now)
+			if requestedDelay > MaxValidityDelay {
+				return errors.Errorf("requested validity delay is too long: 'requested validity delay'=%v, 'max validity delay'=%v", requestedDelay, MaxValidityDelay)
+			}
 		}
-		requestedDelay := notBefore.Sub(now)
-		if requestedDelay > MaxValidityDelay {
-			return errors.Errorf("requested validity delay is too long: 'requested validity delay'=%v, 'max validity delay'=%v", requestedDelay, MaxValidityDelay)
+		if !expiration.IsZero() {
+			if !notBefore.IsZero() {
+				if expiration.Before(notBefore) {
+					return errors.Errorf("nbf < exp: nbf=%v, exp=%v", notBefore, expiration)
+
+				}
+				requestedValidity := expiration.Sub(notBefore)
+				if requestedValidity < MinValidity {
+					return errors.Errorf("requested token validity is too short: 'requested token validity'=%v, 'minimum token validity'=%v", requestedValidity, MinValidity)
+				} else if requestedValidity > MaxValidity {
+					return errors.Errorf("requested token validity is too long: 'requested token validity'=%v, 'maximum token validity'=%v", requestedValidity, MaxValidity)
+				}
+			}
 		}
-		requestedValidity := expiration.Sub(notBefore)
-		if requestedValidity < MinValidity {
-			return errors.Errorf("requested token validity is too short: 'requested token validity'=%v, 'minimum token validity'=%v", requestedValidity, MinValidity)
-		} else if requestedValidity > MaxValidity {
-			return errors.Errorf("requested token validity is too long: 'requested token validity'=%v, 'maximum token validity'=%v", requestedValidity, MaxValidity)
-		}
+		// Zero time will set nbf and exp as nil
 		c.NotBefore = jose.NewNumericDate(notBefore)
 		c.Expiry = jose.NewNumericDate(expiration)
 		return nil

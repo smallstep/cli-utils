@@ -17,6 +17,14 @@ func TestOptions(t *testing.T) {
 		now   = time.Now()
 	)
 
+	temp := timeNowUTC
+	timeNowUTC = func() time.Time {
+		return now.UTC()
+	}
+	t.Cleanup(func() {
+		timeNowUTC = temp
+	})
+
 	certs, err := pemutil.ReadCertificateBundle("./testdata/foo.crt")
 	assert.FatalError(t, err)
 	certStrs := make([]string, len(certs))
@@ -37,7 +45,16 @@ func TestOptions(t *testing.T) {
 		{"WithClaim fail", WithClaim("", "foo"), empty, true},
 		{"WithRootCA ok", WithRootCA("testdata/ca.crt"), &Claims{ExtraClaims: map[string]interface{}{"sha": "6908751f68290d4573ae0be39a98c8b9b7b7d4e8b2a6694b7509946626adfe98"}}, false},
 		{"WithRootCA fail", WithRootCA("not-exists"), empty, true},
+		{"WithIssuedAt", WithIssuedAt(now), &Claims{Claims: jose.Claims{IssuedAt: jose.NewNumericDate(now)}}, false},
+		{"WithIssuedAt zero", WithIssuedAt(time.Time{}), &Claims{Claims: jose.Claims{IssuedAt: nil}}, false},
 		{"WithValidity ok", WithValidity(now, now.Add(5*time.Minute)), &Claims{Claims: jose.Claims{NotBefore: jose.NewNumericDate(now), Expiry: jose.NewNumericDate(now.Add(5 * time.Minute))}}, false},
+		{"WithValidity zero nbf", WithValidity(time.Time{}, now), &Claims{Claims: jose.Claims{NotBefore: nil, Expiry: jose.NewNumericDate(now)}}, false},
+		{"WithValidity zero exp", WithValidity(now, time.Time{}), &Claims{Claims: jose.Claims{NotBefore: jose.NewNumericDate(now), Expiry: nil}}, false},
+		{"WithValidity zero", WithValidity(time.Time{}, time.Time{}), &Claims{Claims: jose.Claims{NotBefore: nil, Expiry: nil}}, false},
+		{"WithValidity fail expired", WithValidity(now, now.Add(-time.Second)), &Claims{Claims: jose.Claims{}}, true},
+		{"WithValidity fail delay validity", WithValidity(now.Add(MaxValidityDelay+1), now.Add(MaxValidityDelay+5*time.Minute)), &Claims{Claims: jose.Claims{}}, true},
+		{"WithValidity fail min validity", WithValidity(now, now.Add(MinValidity-1)), &Claims{Claims: jose.Claims{}}, true},
+		{"WithValidity fail max validity", WithValidity(now, now.Add(MaxValidity+1)), &Claims{Claims: jose.Claims{}}, true},
 		{"WithRootCA expired", WithValidity(now, now.Add(-1*time.Second)), empty, true},
 		{"WithRootCA long delay", WithValidity(now.Add(MaxValidityDelay+time.Minute), now.Add(MaxValidityDelay+10*time.Minute)), empty, true},
 		{"WithRootCA min validity ok", WithValidity(now, now.Add(MinValidity)), &Claims{Claims: jose.Claims{NotBefore: jose.NewNumericDate(now), Expiry: jose.NewNumericDate(now.Add(MinValidity))}}, false},
