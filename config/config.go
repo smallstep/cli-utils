@@ -1,7 +1,9 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -9,6 +11,10 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"go.step.sm/cli-utils/errs"
+	"go.step.sm/cli-utils/ui"
 )
 
 // version and buildTime are filled in during build by the Makefile
@@ -26,17 +32,138 @@ const StepPathEnv = "STEPPATH"
 // default home directory.
 const HomeEnv = "HOME"
 
-// stepPath will be populated in init() with the proper STEPPATH.
-var stepPath string
+// stepBasePath will be populated in init() with the proper STEPPATH.
+var stepBasePath string
 
 // homePath will be populated in init() with the proper HOME.
 var homePath string
 
-// StepPath returns the path for the step configuration directory, this is
-// defined by the environment variable STEPPATH or if this is not set it will
-// default to '$HOME/.step'.
+type Context struct {
+	Name      string `json:"-"`
+	Profile   string `json:"profile"`
+	Authority string `json:"authority"`
+}
+
+type ContextMap map[string]*Context
+
+// currentCtx will be populated in init() with the proper current context
+// if one exists.
+var (
+	currentCtx *Context
+	ctxMap     = ContextMap{}
+)
+
+// ctxMap will be populated in init() with the full map of all contexts.
+
+func loadContextMap() error {
+	contextsFile := filepath.Join(stepBasePath, "contexts.json")
+	_, err := os.Stat(contextsFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	b, err := ioutil.ReadFile(contextsFile)
+	if err != nil {
+		return errs.FileError(err, contextsFile)
+	}
+	if err := json.Unmarshal(b, &ctxMap); err != nil {
+		return errors.Wrap(err, "error unmarshaling context map")
+	}
+	for k, ctx := range ctxMap {
+		ctx.Name = k
+	}
+	return nil
+}
+
+func setCurrentContext() error {
+	currentCtxFile := filepath.Join(stepBasePath, "current-context.json")
+	_, err := os.Stat(currentCtxFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	b, err := ioutil.ReadFile(currentCtxFile)
+	if err != nil {
+		return errs.FileError(err, currentCtxFile)
+	}
+
+	type currentContextType struct {
+		Context string `json:"context"`
+	}
+	var cct currentContextType
+
+	if err := json.Unmarshal(b, &cct); err != nil {
+		return errors.Wrap(err, "error unmarshaling current context")
+	}
+
+	var ok bool
+	currentCtx, ok = ctxMap[cct.Context]
+	if !ok {
+		// TODO do something
+		ui.Printf("Could not load context %s\n", cct.Context)
+	}
+	return nil
+}
+
+// GetContext returns the context with the given name.
+func GetContext(name string) (ctx *Context, ok bool) {
+	ctx, ok = ctxMap[name]
+	return
+}
+
+// GetCurrentcontext returns the current context.
+func GetCurrentContext() (ctx *Context) {
+	return currentCtx
+}
+
+// GetContextMap returns the context map.
+func GetContextMap() ContextMap {
+	return ctxMap
+}
+
+// StepBasePath returns the base path for the step configuration directory.
+func StepBasePath() string {
+	return stepBasePath
+}
+
+// StepPath returns the path for the step configuration directory.
+//
+// 1) If the base step path has a current context configured, then this method
+//    returns the path to the authority configured in the context.
+// 2) If the base step path does not have a current context configured this
+//    method returns the value defined by the environment variable STEPPATH, OR
+// 3) If no environment variable is set, this method returns `$HOME/.step`.
 func StepPath() string {
-	return stepPath
+	if currentCtx == nil {
+		return stepBasePath
+	}
+	return filepath.Join(stepBasePath, "contexts", currentCtx.Authority)
+}
+
+// StepProfilePath returns the path for the currently selected profile path.
+//
+// 1) If the base step path has a current context configured, then this method
+//    returns the path to the profile configured in the context.
+// 2) If the base step path does not have a current context configured this
+//    method returns the value defined by the environment variable STEPPATH, OR
+// 3) If no environment variable is set, this method returns `$HOME/.step`.
+func StepProfilePath() string {
+	if currentCtx == nil {
+		return stepBasePath
+	}
+	return filepath.Join(stepBasePath, "profiles", currentCtx.Profile)
+}
+
+func StepCurrentContextFile() string {
+	return filepath.Join(stepBasePath, "current-context.json")
+}
+
+func StepContextsFile() string {
+	return filepath.Join(stepBasePath, "contexts.json")
 }
 
 // Home returns the user home directory using the environment variable HOME or
@@ -69,7 +196,7 @@ func StepAbs(path string) string {
 		}
 		return path
 	default:
-		return filepath.Join(stepPath, path)
+		return filepath.Join(stepBasePath, path)
 	}
 }
 
@@ -88,23 +215,35 @@ func init() {
 	}
 
 	// Get step path from environment or relative to home.
-	stepPath = os.Getenv(StepPathEnv)
-	if stepPath == "" {
-		stepPath = filepath.Join(homePath, ".step")
+	stepBasePath = os.Getenv(StepPathEnv)
+	if stepBasePath == "" {
+		stepBasePath = filepath.Join(homePath, ".step")
 	}
 
-	// Check for presence or attempt to create it if necessary.
-	//
-	// Some environments (e.g. third party docker images) might fail creating
-	// the directory, so this should not panic if it can't.
-	if fi, err := os.Stat(stepPath); err != nil {
-		os.MkdirAll(stepPath, 0700)
-	} else if !fi.IsDir() {
-		l.Fatalf("File '%s' is not a directory.", stepPath)
+	// Load Context Map if one exists.
+	if err := loadContextMap(); err != nil {
+		l.Fatal(err.Error())
 	}
+	// Set the current context if one exists.
+	if err := setCurrentContext(); err != nil {
+		l.Fatal(err.Error())
+	}
+
+	if currentCtx == nil {
+		// Check for presence or attempt to create it if necessary.
+		//
+		// Some environments (e.g. third party docker images) might fail creating
+		// the directory, so this should not panic if it can't.
+		if fi, err := os.Stat(stepBasePath); err != nil {
+			os.MkdirAll(stepBasePath, 0700)
+		} else if !fi.IsDir() {
+			l.Fatalf("File '%s' is not a directory.", stepBasePath)
+		}
+	}
+
 	// cleanup
 	homePath = filepath.Clean(homePath)
-	stepPath = filepath.Clean(stepPath)
+	stepBasePath = filepath.Clean(stepBasePath)
 }
 
 // Set updates the Version and ReleaseDate

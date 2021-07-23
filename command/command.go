@@ -61,7 +61,7 @@ func IsForce() bool {
 func getConfigVars(ctx *cli.Context) error {
 	configFile := ctx.GlobalString("config")
 	if configFile == "" {
-		configFile = filepath.Join(config.StepPath(), "config", "defaults.json")
+		configFile = filepath.Join(config.StepBasePath(), "config", "defaults.json")
 	}
 
 	b, err := ioutil.ReadFile(configFile)
