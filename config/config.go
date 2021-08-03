@@ -141,7 +141,7 @@ func StepPath() string {
 	if currentCtx == nil {
 		return stepBasePath
 	}
-	return filepath.Join(stepBasePath, "contexts", currentCtx.Authority)
+	return filepath.Join(stepBasePath, "authorities", currentCtx.Authority)
 }
 
 // StepProfilePath returns the path for the currently selected profile path.
