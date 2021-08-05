@@ -17,13 +17,6 @@ import (
 	"go.step.sm/cli-utils/ui"
 )
 
-// version and buildTime are filled in during build by the Makefile
-var (
-	name      = "Smallstep CLI"
-	buildTime = "N/A"
-	commit    = "N/A"
-)
-
 // StepPathEnv defines the name of the environment variable that can overwrite
 // the default configuration path.
 const StepPathEnv = "STEPPATH"
@@ -32,28 +25,36 @@ const StepPathEnv = "STEPPATH"
 // default home directory.
 const HomeEnv = "HOME"
 
-// stepBasePath will be populated in init() with the proper STEPPATH.
-var stepBasePath string
-
-// homePath will be populated in init() with the proper HOME.
-var homePath string
-
+// Context represents a Step Path configuration context. A context is the
+// combination of a profile and an authority.
 type Context struct {
 	Name      string `json:"-"`
 	Profile   string `json:"profile"`
 	Authority string `json:"authority"`
 }
 
+// ContextMap represents the map of available Contexts that is stored
+// at the base of the Step Path.
 type ContextMap map[string]*Context
 
-// currentCtx will be populated in init() with the proper current context
-// if one exists.
 var (
-	currentCtx *Context
-	ctxMap     = ContextMap{}
-)
+	// version and buildTime are filled in during build by the Makefile
+	name      = "Smallstep CLI"
+	buildTime = "N/A"
+	commit    = "N/A"
 
-// ctxMap will be populated in init() with the full map of all contexts.
+	// currentCtx will be populated in init() with the proper current context
+	// if one exists.
+	currentCtx *Context
+	// ctxMap will be populated in init() with the full map of all contexts.
+	ctxMap = ContextMap{}
+
+	// stepBasePath will be populated in init() with the proper STEPPATH.
+	stepBasePath string
+
+	// homePath will be populated in init() with the proper HOME.
+	homePath string
+)
 
 func loadContextMap() error {
 	contextsFile := filepath.Join(stepBasePath, "contexts.json")
@@ -115,7 +116,7 @@ func GetContext(name string) (ctx *Context, ok bool) {
 	return
 }
 
-// GetCurrentcontext returns the current context.
+// GetCurrentContext returns the current context.
 func GetCurrentContext() (ctx *Context) {
 	return currentCtx
 }
@@ -158,10 +159,12 @@ func StepProfilePath() string {
 	return filepath.Join(stepBasePath, "profiles", currentCtx.Profile)
 }
 
+// StepCurrentContextFile returns the path to the file containing the current context.
 func StepCurrentContextFile() string {
 	return filepath.Join(stepBasePath, "current-context.json")
 }
 
+// StepContextsFile returns the path to the file containing the context map.
 func StepContextsFile() string {
 	return filepath.Join(stepBasePath, "contexts.json")
 }
@@ -196,7 +199,7 @@ func StepAbs(path string) string {
 		}
 		return path
 	default:
-		return filepath.Join(stepBasePath, path)
+		return filepath.Join(StepPath(), path)
 	}
 }
 

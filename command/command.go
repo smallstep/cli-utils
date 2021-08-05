@@ -59,41 +59,71 @@ func IsForce() bool {
 //
 // TODO(mariano): right now it only supports parameters at first level.
 func getConfigVars(ctx *cli.Context) error {
-	configFile := ctx.GlobalString("config")
-	if configFile == "" {
-		configFile = filepath.Join(config.StepBasePath(), "config", "defaults.json")
+	var m map[string]interface{}
+	stepCtx := config.GetCurrentContext()
+	if stepCtx == nil {
+		configFile := ctx.GlobalString("config")
+		if configFile == "" {
+			configFile = filepath.Join(config.StepBasePath(), "config", "defaults.json")
+		}
+
+		b, err := ioutil.ReadFile(configFile)
+		if err != nil {
+			return nil
+		}
+
+		m = make(map[string]interface{})
+		if err := json.Unmarshal(b, &m); err != nil {
+			return errors.Wrapf(err, "error parsing %s", configFile)
+		}
+	} else {
+		authorityConfigFile := filepath.Join(config.StepPath(), "config", "defaults.json")
+		b, err := ioutil.ReadFile(filepath.Join(authorityConfigFile))
+		if err != nil {
+			return nil
+		}
+
+		authorityMap := make(map[string]interface{})
+		if err := json.Unmarshal(b, &authorityMap); err != nil {
+			return errors.Wrapf(err, "error parsing %s", authorityConfigFile)
+		}
+
+		profileConfigFile := filepath.Join(config.StepProfilePath(), "config", "defaults.json")
+		b, err = ioutil.ReadFile(filepath.Join(profileConfigFile))
+		if err != nil {
+			return nil
+		}
+
+		profileMap := make(map[string]interface{})
+		if err := json.Unmarshal(b, &authorityMap); err != nil {
+			return errors.Wrapf(err, "error parsing %s", profileConfigFile)
+		}
+
+		// Combine authority and profile maps such that profile values take precedence.
+		for k, v := range authorityMap {
+			if _, ok := profileMap[k]; !ok {
+				profileMap[k] = v
+			}
+		}
+		m = profileMap
 	}
 
-	b, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return nil
-	}
-
-	m := make(map[string]interface{})
-	if err := json.Unmarshal(b, &m); err != nil {
-		return errors.Wrapf(err, "error parsing %s", configFile)
-	}
-
-	flags := make(map[string]cli.Flag)
 	for _, f := range ctx.Command.Flags {
-		name := strings.Split(f.GetName(), ",")[0]
-		flags[name] = f
-	}
-
-	for _, name := range ctx.FlagNames() {
-		if ctx.IsSet(name) {
+		// Skip if EnvVar == IgnoreEnvVar
+		if getFlagEnvVar(f) == IgnoreEnvVar {
 			continue
 		}
 
-		// Skip if EnvVar == IgnoreEnvVar
-		if f, ok := flags[name]; ok {
-			if getFlagEnvVar(f) == IgnoreEnvVar {
-				continue
+		for _, name := range strings.Split(f.GetName(), ",") {
+			name = strings.TrimSpace(name)
+			if ctx.IsSet(name) {
+				break
 			}
-		}
-
-		if v, ok := m[name]; ok {
-			ctx.Set(name, fmt.Sprintf("%v", v))
+			// Set the flag for the first key that matches.
+			if v, ok := m[name]; ok {
+				ctx.Set(name, fmt.Sprintf("%v", v))
+				break
+			}
 		}
 	}
 
