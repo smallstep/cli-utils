@@ -1,4 +1,4 @@
-package config
+package step
 
 import (
 	"encoding/json"
@@ -14,12 +14,11 @@ import (
 
 	"github.com/pkg/errors"
 	"go.step.sm/cli-utils/errs"
-	"go.step.sm/cli-utils/ui"
 )
 
-// StepPathEnv defines the name of the environment variable that can overwrite
+// PathEnv defines the name of the environment variable that can overwrite
 // the default configuration path.
-const StepPathEnv = "STEPPATH"
+const PathEnv = "STEPPATH"
 
 // HomeEnv defines the name of the environment variable that can overwrite the
 // default home directory.
@@ -78,7 +77,7 @@ func loadContextMap() error {
 	return nil
 }
 
-func setCurrentContext() error {
+func setDefaultCurrentContext() error {
 	currentCtxFile := filepath.Join(stepBasePath, "current-context.json")
 	_, err := os.Stat(currentCtxFile)
 	if err != nil {
@@ -101,11 +100,22 @@ func setCurrentContext() error {
 		return errors.Wrap(err, "error unmarshaling current context")
 	}
 
+	return SetCurrentContext(cct.Context)
+}
+
+// IsContextEnabled returns true if contexts are enabled (the context map is not
+// empty) and false otherwise.
+func IsContextEnabled() bool {
+	return len(ctxMap) > 0
+}
+
+// SetCurrentContext sets the current context or returns an error if a context
+// with the given name cannot be loaded.
+func SetCurrentContext(name string) error {
 	var ok bool
-	currentCtx, ok = ctxMap[cct.Context]
+	currentCtx, ok = ctxMap[name]
 	if !ok {
-		// TODO do something
-		ui.Printf("Could not load context %s\n", cct.Context)
+		return errors.Errorf("Could not load context %s\n", name)
 	}
 	return nil
 }
@@ -116,8 +126,20 @@ func GetContext(name string) (ctx *Context, ok bool) {
 	return
 }
 
+// AddContext adds a new context and writes the updated context map to disk.
+func AddContext(ctx *Context) error {
+	ctxMap[ctx.Name] = ctx
+
+	b, err := json.MarshalIndent(ctxMap, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(filepath.Join(stepBasePath, "contexts.json"), b, 0600)
+}
+
 // GetCurrentContext returns the current context.
-func GetCurrentContext() (ctx *Context) {
+func GetCurrentContext() *Context {
 	return currentCtx
 }
 
@@ -126,46 +148,46 @@ func GetContextMap() ContextMap {
 	return ctxMap
 }
 
-// StepBasePath returns the base path for the step configuration directory.
-func StepBasePath() string {
+// BasePath returns the base path for the step configuration directory.
+func BasePath() string {
 	return stepBasePath
 }
 
-// StepPath returns the path for the step configuration directory.
+// Path returns the path for the step configuration directory.
 //
 // 1) If the base step path has a current context configured, then this method
 //    returns the path to the authority configured in the context.
 // 2) If the base step path does not have a current context configured this
 //    method returns the value defined by the environment variable STEPPATH, OR
 // 3) If no environment variable is set, this method returns `$HOME/.step`.
-func StepPath() string {
+func Path() string {
 	if currentCtx == nil {
 		return stepBasePath
 	}
 	return filepath.Join(stepBasePath, "authorities", currentCtx.Authority)
 }
 
-// StepProfilePath returns the path for the currently selected profile path.
+// ProfilePath returns the path for the currently selected profile path.
 //
 // 1) If the base step path has a current context configured, then this method
 //    returns the path to the profile configured in the context.
 // 2) If the base step path does not have a current context configured this
 //    method returns the value defined by the environment variable STEPPATH, OR
 // 3) If no environment variable is set, this method returns `$HOME/.step`.
-func StepProfilePath() string {
+func ProfilePath() string {
 	if currentCtx == nil {
 		return stepBasePath
 	}
 	return filepath.Join(stepBasePath, "profiles", currentCtx.Profile)
 }
 
-// StepCurrentContextFile returns the path to the file containing the current context.
-func StepCurrentContextFile() string {
+// CurrentContextFile returns the path to the file containing the current context.
+func CurrentContextFile() string {
 	return filepath.Join(stepBasePath, "current-context.json")
 }
 
-// StepContextsFile returns the path to the file containing the context map.
-func StepContextsFile() string {
+// ContextsFile returns the path to the file containing the context map.
+func ContextsFile() string {
 	return filepath.Join(stepBasePath, "contexts.json")
 }
 
@@ -175,7 +197,7 @@ func Home() string {
 	return homePath
 }
 
-// StepAbs returns the given path relative to the StepPath if it's not an
+// Abs returns the given path relative to the STEPPATH if it's not an
 // absolute path, relative to the home directory using the special string "~/",
 // or relative to the working directory using "./"
 //
@@ -184,7 +206,7 @@ func Home() string {
 // relative to the current directory. Home relative paths like
 // ~/certs/root_ca.crt will be converted to '$HOME/certs/root_ca.crt'. And
 // absolute paths like '/certs/root_ca.crt' will remain the same.
-func StepAbs(path string) string {
+func Abs(path string) string {
 	if filepath.IsAbs(path) {
 		return path
 	}
@@ -199,7 +221,7 @@ func StepAbs(path string) string {
 		}
 		return path
 	default:
-		return filepath.Join(StepPath(), path)
+		return filepath.Join(Path(), path)
 	}
 }
 
@@ -218,7 +240,7 @@ func init() {
 	}
 
 	// Get step path from environment or relative to home.
-	stepBasePath = os.Getenv(StepPathEnv)
+	stepBasePath = os.Getenv(PathEnv)
 	if stepBasePath == "" {
 		stepBasePath = filepath.Join(homePath, ".step")
 	}
@@ -228,7 +250,7 @@ func init() {
 		l.Fatal(err.Error())
 	}
 	// Set the current context if one exists.
-	if err := setCurrentContext(); err != nil {
+	if err := setDefaultCurrentContext(); err != nil {
 		l.Fatal(err.Error())
 	}
 

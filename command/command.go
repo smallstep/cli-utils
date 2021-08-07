@@ -11,7 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"go.step.sm/cli-utils/config"
+	"go.step.sm/cli-utils/step"
 	"go.step.sm/cli-utils/usage"
 )
 
@@ -59,12 +59,19 @@ func IsForce() bool {
 //
 // TODO(mariano): right now it only supports parameters at first level.
 func getConfigVars(ctx *cli.Context) error {
+	// Set the current STEPPATH context.
+	if ctx.IsSet("context") {
+		if err := step.SetCurrentContext(ctx.String("context")); err != nil {
+			return err
+		}
+	}
+
 	var m map[string]interface{}
-	stepCtx := config.GetCurrentContext()
+	stepCtx := step.GetCurrentContext()
 	if stepCtx == nil {
 		configFile := ctx.GlobalString("config")
 		if configFile == "" {
-			configFile = filepath.Join(config.StepBasePath(), "config", "defaults.json")
+			configFile = filepath.Join(step.BasePath(), "config", "defaults.json")
 		}
 
 		b, err := ioutil.ReadFile(configFile)
@@ -77,7 +84,7 @@ func getConfigVars(ctx *cli.Context) error {
 			return errors.Wrapf(err, "error parsing %s", configFile)
 		}
 	} else {
-		authorityConfigFile := filepath.Join(config.StepPath(), "config", "defaults.json")
+		authorityConfigFile := filepath.Join(step.Path(), "config", "defaults.json")
 		b, err := ioutil.ReadFile(filepath.Join(authorityConfigFile))
 		if err != nil {
 			return nil
@@ -88,7 +95,7 @@ func getConfigVars(ctx *cli.Context) error {
 			return errors.Wrapf(err, "error parsing %s", authorityConfigFile)
 		}
 
-		profileConfigFile := filepath.Join(config.StepProfilePath(), "config", "defaults.json")
+		profileConfigFile := filepath.Join(step.ProfilePath(), "config", "defaults.json")
 		b, err = ioutil.ReadFile(filepath.Join(profileConfigFile))
 		if err != nil {
 			return nil
