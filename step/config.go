@@ -100,7 +100,7 @@ func setDefaultCurrentContext() error {
 		return errors.Wrap(err, "error unmarshaling current context")
 	}
 
-	return SetCurrentContext(cct.Context)
+	return SwitchCurrentContext(cct.Context)
 }
 
 // IsContextEnabled returns true if contexts are enabled (the context map is not
@@ -109,13 +109,37 @@ func IsContextEnabled() bool {
 	return len(ctxMap) > 0
 }
 
-// SetCurrentContext sets the current context or returns an error if a context
+// SwitchCurrentContext switches the current context or returns an error if a context
 // with the given name cannot be loaded.
-func SetCurrentContext(name string) error {
+//
+// NOTE: this method should only be called from the command package init() method.
+// It only makes sense to switch the context before the context specific flags
+// are set.
+func SwitchCurrentContext(name string) error {
 	var ok bool
 	currentCtx, ok = ctxMap[name]
 	if !ok {
 		return errors.Errorf("Could not load context %s\n", name)
+	}
+	return nil
+}
+
+// WriteCurrentContext stores the given context name as the selected default context.
+func WriteCurrentContext(name string) error {
+	if _, ok := GetContext(name); !ok {
+		return errors.Errorf("context '%s' not found", name)
+	}
+
+	type currentCtxType struct {
+		Context string `json:"context"`
+	}
+	def := currentCtxType{Context: name}
+	b, err := json.Marshal(def)
+	if err != nil {
+		return err
+	}
+	if err = ioutil.WriteFile(CurrentContextFile(), b, 0644); err != nil {
+		return errs.FileError(err, CurrentContextFile())
 	}
 	return nil
 }
@@ -128,14 +152,27 @@ func GetContext(name string) (ctx *Context, ok bool) {
 
 // AddContext adds a new context and writes the updated context map to disk.
 func AddContext(ctx *Context) error {
-	ctxMap[ctx.Name] = ctx
+	if ctxMap == nil {
+		ctxMap = map[string]*Context{ctx.Name: ctx}
+	} else {
+		ctxMap[ctx.Name] = ctx
+	}
 
 	b, err := json.MarshalIndent(ctxMap, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile(filepath.Join(stepBasePath, "contexts.json"), b, 0600)
+	if err := ioutil.WriteFile(filepath.Join(stepBasePath, "contexts.json"), b, 0600); err != nil {
+		return err
+	}
+
+	if currentCtx == nil {
+		if err := WriteCurrentContext(ctx.Name); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetCurrentContext returns the current context.

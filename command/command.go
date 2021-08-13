@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.step.sm/cli-utils/errs"
 	"go.step.sm/cli-utils/step"
 	"go.step.sm/cli-utils/usage"
 )
@@ -61,7 +62,7 @@ func IsForce() bool {
 func getConfigVars(ctx *cli.Context) error {
 	// Set the current STEPPATH context.
 	if ctx.IsSet("context") {
-		if err := step.SetCurrentContext(ctx.String("context")); err != nil {
+		if err := step.SwitchCurrentContext(ctx.String("context")); err != nil {
 			return err
 		}
 	}
@@ -69,6 +70,21 @@ func getConfigVars(ctx *cli.Context) error {
 	var m map[string]interface{}
 	stepCtx := step.GetCurrentContext()
 	if stepCtx == nil {
+		// Error if default context is not set but context map exists.
+		// Unless a 'step context' subcommand is being used. Don't want to
+		// prevent users from listing or selecting contexts to fix the error.
+		if !strings.HasPrefix(ctx.Command.FullName(), "context") {
+			// If context map file exists then error.
+			contextsFile := filepath.Join(step.BasePath(), "contexts.json")
+			if _, err := os.Stat(contextsFile); !os.IsNotExist(err) {
+				return errors.Errorf(`Default context not set.
+
+If you would like to continue using contexts, please select a default context by running: 'step context select <name>'.
+
+Otherwise, disable contexts by running: 'rm -rf $(step path --base)/contexts.json && rm -rf $(step path --base)/authorities'.`)
+			}
+		}
+
 		configFile := ctx.GlobalString("config")
 		if configFile == "" {
 			configFile = filepath.Join(step.BasePath(), "config", "defaults.json")
@@ -87,7 +103,7 @@ func getConfigVars(ctx *cli.Context) error {
 		authorityConfigFile := filepath.Join(step.Path(), "config", "defaults.json")
 		b, err := ioutil.ReadFile(filepath.Join(authorityConfigFile))
 		if err != nil {
-			return nil
+			return errs.FileError(err, authorityConfigFile)
 		}
 
 		authorityMap := make(map[string]interface{})
@@ -95,15 +111,16 @@ func getConfigVars(ctx *cli.Context) error {
 			return errors.Wrapf(err, "error parsing %s", authorityConfigFile)
 		}
 
-		profileConfigFile := filepath.Join(step.ProfilePath(), "config", "defaults.json")
-		b, err = ioutil.ReadFile(filepath.Join(profileConfigFile))
-		if err != nil {
-			return nil
-		}
-
 		profileMap := make(map[string]interface{})
-		if err := json.Unmarshal(b, &authorityMap); err != nil {
-			return errors.Wrapf(err, "error parsing %s", profileConfigFile)
+		profileConfigFile := filepath.Join(step.ProfilePath(), "config", "defaults.json")
+		if _, err := os.Stat(profileConfigFile); !os.IsNotExist(err) {
+			b, err = ioutil.ReadFile(profileConfigFile)
+			if err != nil {
+				return nil
+			}
+			if err := json.Unmarshal(b, &profileMap); err != nil {
+				return errors.Wrapf(err, "error parsing %s", profileConfigFile)
+			}
 		}
 
 		// Combine authority and profile maps such that profile values take precedence.
