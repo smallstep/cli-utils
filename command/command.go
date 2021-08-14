@@ -13,6 +13,7 @@ import (
 	"github.com/urfave/cli"
 	"go.step.sm/cli-utils/errs"
 	"go.step.sm/cli-utils/step"
+	"go.step.sm/cli-utils/ui"
 	"go.step.sm/cli-utils/usage"
 )
 
@@ -55,36 +56,71 @@ func IsForce() bool {
 	return currentContext != nil && currentContext.Bool("force")
 }
 
+type contextSelect struct {
+	Name    string
+	Context *step.Context
+}
+
 // getConfigVars load the defaults.json file and sets the flags if they are not
 // already set or the EnvVar is set to IgnoreEnvVar.
 //
 // TODO(mariano): right now it only supports parameters at first level.
 func getConfigVars(ctx *cli.Context) error {
+	fullCommandName := ctx.Command.FullName()
+
+	// Do not attempt to load context for the following subcommands.
+	noContextList := []string{
+		"ca bootstrap",
+		"context list",
+		"context select",
+	}
+	for _, k := range noContextList {
+		if fullCommandName == k {
+			return nil
+		}
+	}
+
 	// Set the current STEPPATH context.
+	var ctxStr string
 	if ctx.IsSet("context") {
-		if err := step.SwitchCurrentContext(ctx.String("context")); err != nil {
+		ctxStr = ctx.String("context")
+	} else if step.GetCurrentContext() == nil {
+		contextsFile := filepath.Join(step.BasePath(), "contexts.json")
+		if _, err := os.Stat(contextsFile); !os.IsNotExist(err) {
+			// Select context
+			ctxMap := step.GetContextMap()
+			var items []*contextSelect
+			for _, context := range ctxMap {
+				items = append(items, &contextSelect{
+					Name:    context.Name,
+					Context: context,
+				})
+			}
+
+			if len(items) == 1 {
+				if err := ui.PrintSelected("Context", items[0].Name); err != nil {
+					return err
+				}
+				ctxStr = items[0].Name
+			} else {
+				i, _, err := ui.Select("Select a context for this command:\t(run 'step context select <name>' to set a default context)", items,
+					ui.WithSelectTemplates(ui.NamedSelectTemplates("Context")))
+				if err != nil {
+					return err
+				}
+				ctxStr = items[i].Name
+			}
+		}
+	}
+
+	if ctxStr != "" {
+		if err := step.SwitchCurrentContext(ctxStr); err != nil {
 			return err
 		}
 	}
 
 	var m map[string]interface{}
-	stepCtx := step.GetCurrentContext()
-	if stepCtx == nil {
-		// Error if default context is not set but context map exists.
-		// Unless a 'step context' subcommand is being used. Don't want to
-		// prevent users from listing or selecting contexts to fix the error.
-		if !strings.HasPrefix(ctx.Command.FullName(), "context") {
-			// If context map file exists then error.
-			contextsFile := filepath.Join(step.BasePath(), "contexts.json")
-			if _, err := os.Stat(contextsFile); !os.IsNotExist(err) {
-				return errors.Errorf(`Default context not set.
-
-If you would like to continue using contexts, please select a default context by running: 'step context select <name>'.
-
-Otherwise, disable contexts by running: 'rm -rf $(step path --base)/contexts.json && rm -rf $(step path --base)/authorities'.`)
-			}
-		}
-
+	if step.GetCurrentContext() == nil {
 		configFile := ctx.GlobalString("config")
 		if configFile == "" {
 			configFile = filepath.Join(step.BasePath(), "config", "defaults.json")
@@ -100,6 +136,9 @@ Otherwise, disable contexts by running: 'rm -rf $(step path --base)/contexts.jso
 			return errors.Wrapf(err, "error parsing %s", configFile)
 		}
 	} else {
+		if strings.HasPrefix(fullCommandName, "ca bootstrap-helper") {
+			return nil
+		}
 		authorityConfigFile := filepath.Join(step.Path(), "config", "defaults.json")
 		b, err := ioutil.ReadFile(filepath.Join(authorityConfigFile))
 		if err != nil {

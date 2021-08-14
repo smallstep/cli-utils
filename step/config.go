@@ -150,6 +150,28 @@ func GetContext(name string) (ctx *Context, ok bool) {
 	return
 }
 
+// RemoveContext removes a context from the context map and saves the updated
+// map to disk.
+func RemoveContext(name string) error {
+	if ctxMap == nil {
+		return errors.Errorf("context '%s' not found", name)
+	}
+	if _, ok := ctxMap[name]; !ok {
+		return errors.Errorf("context '%s' not found", name)
+	}
+	delete(ctxMap, name)
+
+	b, err := json.MarshalIndent(ctxMap, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(stepBasePath, "contexts.json"), b, 0600); err != nil {
+		return err
+	}
+	return nil
+}
+
 // AddContext adds a new context and writes the updated context map to disk.
 func AddContext(ctx *Context) error {
 	if ctxMap == nil {
