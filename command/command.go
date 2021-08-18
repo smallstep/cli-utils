@@ -71,7 +71,9 @@ func getConfigVars(ctx *cli.Context) error {
 	// Do not attempt to load context for the following subcommands.
 	noContextList := []string{
 		"ca bootstrap",
+		"ca init",
 		"context list",
+		"context remove",
 		"context select",
 	}
 	for _, k := range noContextList {
@@ -126,14 +128,21 @@ func getConfigVars(ctx *cli.Context) error {
 			configFile = filepath.Join(step.BasePath(), "config", "defaults.json")
 		}
 
-		b, err := ioutil.ReadFile(configFile)
-		if err != nil {
+		_, err := os.Stat(configFile)
+		switch {
+		case os.IsNotExist(err):
 			return nil
-		}
-
-		m = make(map[string]interface{})
-		if err := json.Unmarshal(b, &m); err != nil {
-			return errors.Wrapf(err, "error parsing %s", configFile)
+		case err != nil:
+			return err
+		default:
+			b, err := ioutil.ReadFile(configFile)
+			if err != nil {
+				return nil
+			}
+			m = make(map[string]interface{})
+			if err := json.Unmarshal(b, &m); err != nil {
+				return errors.Wrapf(err, "error parsing %s", configFile)
+			}
 		}
 	} else {
 		if strings.HasPrefix(fullCommandName, "ca bootstrap-helper") {
