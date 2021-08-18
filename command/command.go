@@ -148,21 +148,36 @@ func getConfigVars(ctx *cli.Context) error {
 		if strings.HasPrefix(fullCommandName, "ca bootstrap-helper") {
 			return nil
 		}
-		authorityConfigFile := filepath.Join(step.Path(), "config", "defaults.json")
-		b, err := ioutil.ReadFile(filepath.Join(authorityConfigFile))
-		if err != nil {
-			return errs.FileError(err, authorityConfigFile)
-		}
 
 		authorityMap := make(map[string]interface{})
-		if err := json.Unmarshal(b, &authorityMap); err != nil {
-			return errors.Wrapf(err, "error parsing %s", authorityConfigFile)
+		authorityConfigFile := filepath.Join(step.Path(), "config", "defaults.json")
+		_, err := os.Stat(authorityConfigFile)
+		switch {
+		case os.IsNotExist(err):
+			break
+		case err != nil:
+			return err
+		default:
+			b, err := ioutil.ReadFile(filepath.Join(authorityConfigFile))
+			if err != nil {
+				return errs.FileError(err, authorityConfigFile)
+			}
+
+			if err := json.Unmarshal(b, &authorityMap); err != nil {
+				return errors.Wrapf(err, "error parsing %s", authorityConfigFile)
+			}
 		}
 
 		profileMap := make(map[string]interface{})
 		profileConfigFile := filepath.Join(step.ProfilePath(), "config", "defaults.json")
-		if _, err := os.Stat(profileConfigFile); !os.IsNotExist(err) {
-			b, err = ioutil.ReadFile(profileConfigFile)
+		_, err = os.Stat(profileConfigFile)
+		switch {
+		case os.IsNotExist(err):
+			break
+		case err != nil:
+			return err
+		default:
+			b, err := ioutil.ReadFile(profileConfigFile)
 			if err != nil {
 				return nil
 			}
