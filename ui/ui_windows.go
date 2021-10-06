@@ -35,10 +35,17 @@ func setConsoleMode() {
 }
 
 func resetConsoleMode() {
-	if err := windows.SetConsoleMode(windows.Stdin, inMode); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to reset console mode: %v\n", err)
+	in := inMode | windows.ENABLE_VIRTUAL_TERMINAL_INPUT
+	out := outMode | windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING
+
+	if inMode != 0 && inMode != in {
+		if err := windows.SetConsoleMode(windows.Stdin, inMode); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to reset console mode: %v\n", err)
+		}
 	}
-	if err := windows.SetConsoleMode(windows.Stdout, outMode); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to reset console mode: %v\n", err)
+	if outMode != 0 && outMode != out {
+		if err := windows.SetConsoleMode(windows.Stdout, outMode); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to reset console mode: %v\n", err)
+		}
 	}
 }
