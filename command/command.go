@@ -195,6 +195,18 @@ func getConfigVars(ctx *cli.Context) error {
 		m = profileMap
 	}
 
+	var attributesBannedFromConfig = []string{
+		"context",
+		"profile",
+		"authority",
+	}
+	for _, attr := range attributesBannedFromConfig {
+		if _, ok := m[attr]; ok {
+			ui.Printf("cannot set '%s' attribute in config files", attr)
+			delete(m, attr)
+		}
+	}
+
 	for _, f := range ctx.Command.Flags {
 		// Skip if EnvVar == IgnoreEnvVar
 		if getFlagEnvVar(f) == IgnoreEnvVar {
