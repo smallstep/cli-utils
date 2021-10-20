@@ -55,8 +55,54 @@ var (
 	homePath string
 )
 
+func init() {
+	l := log.New(os.Stderr, "", 0)
+
+	// Get home path from environment or from the user object.
+	homePath = os.Getenv(HomeEnv)
+	if homePath == "" {
+		usr, err := user.Current()
+		if err == nil && usr.HomeDir != "" {
+			homePath = usr.HomeDir
+		} else {
+			l.Fatalf("Error obtaining home directory, please define environment variable %s.", HomeEnv)
+		}
+	}
+
+	// Get step path from environment or relative to home.
+	stepBasePath = os.Getenv(PathEnv)
+	if stepBasePath == "" {
+		stepBasePath = filepath.Join(homePath, ".step")
+	}
+
+	// cleanup
+	homePath = filepath.Clean(homePath)
+	stepBasePath = filepath.Clean(stepBasePath)
+
+	// Load Context Map if one exists.
+	if err := loadContextMap(); err != nil {
+		l.Fatal(err.Error())
+	}
+	// Set the current context if one exists.
+	if err := setDefaultCurrentContext(); err != nil {
+		l.Fatal(err.Error())
+	}
+
+	if currentCtx == nil {
+		// Check for presence or attempt to create it if necessary.
+		//
+		// Some environments (e.g. third party docker images) might fail creating
+		// the directory, so this should not panic if it can't.
+		if fi, err := os.Stat(stepBasePath); err != nil {
+			os.MkdirAll(stepBasePath, 0700)
+		} else if !fi.IsDir() {
+			l.Fatalf("File '%s' is not a directory.", stepBasePath)
+		}
+	}
+}
+
 func loadContextMap() error {
-	contextsFile := filepath.Join(stepBasePath, "contexts.json")
+	contextsFile := ContextsFile()
 	_, err := os.Stat(contextsFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -78,7 +124,7 @@ func loadContextMap() error {
 }
 
 func setDefaultCurrentContext() error {
-	currentCtxFile := filepath.Join(stepBasePath, "current-context.json")
+	currentCtxFile := CurrentContextFile()
 	_, err := os.Stat(currentCtxFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -119,7 +165,7 @@ func SwitchCurrentContext(name string) error {
 	var ok bool
 	currentCtx, ok = ctxMap[name]
 	if !ok {
-		return errors.Errorf("Could not load context %s\n", name)
+		return errors.Errorf("could not load context '%s'", name)
 	}
 	return nil
 }
@@ -166,7 +212,7 @@ func RemoveContext(name string) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(stepBasePath, "contexts.json"), b, 0600); err != nil {
+	if err := ioutil.WriteFile(ContextsFile(), b, 0600); err != nil {
 		return err
 	}
 	return nil
@@ -185,7 +231,7 @@ func AddContext(ctx *Context) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(stepBasePath, "contexts.json"), b, 0600); err != nil {
+	if err := ioutil.WriteFile(ContextsFile(), b, 0600); err != nil {
 		return err
 	}
 
@@ -221,9 +267,9 @@ func BasePath() string {
 // 3) If no environment variable is set, this method returns `$HOME/.step`.
 func Path() string {
 	if currentCtx == nil {
-		return stepBasePath
+		return BasePath()
 	}
-	return filepath.Join(stepBasePath, "authorities", currentCtx.Authority)
+	return filepath.Join(BasePath(), "authorities", currentCtx.Authority)
 }
 
 // ProfilePath returns the path for the currently selected profile path.
@@ -235,19 +281,9 @@ func Path() string {
 // 3) If no environment variable is set, this method returns `$HOME/.step`.
 func ProfilePath() string {
 	if currentCtx == nil {
-		return stepBasePath
+		return BasePath()
 	}
-	return filepath.Join(stepBasePath, "profiles", currentCtx.Profile)
-}
-
-// CurrentContextFile returns the path to the file containing the current context.
-func CurrentContextFile() string {
-	return filepath.Join(stepBasePath, "current-context.json")
-}
-
-// ContextsFile returns the path to the file containing the context map.
-func ContextsFile() string {
-	return filepath.Join(stepBasePath, "contexts.json")
+	return filepath.Join(BasePath(), "profiles", currentCtx.Profile)
 }
 
 // IdentityFile returns the location of the identity file.
@@ -255,14 +291,37 @@ func IdentityFile() string {
 	return filepath.Join(ProfilePath(), "config", "identity.json")
 }
 
-// DefaultsFile returns the location of the defaults file.
+// DefaultsFile returns the location of the defaults file at the base of the
+// authority path.
 func DefaultsFile() string {
+	return filepath.Join(Path(), "config", "defaults.json")
+}
+
+// BaseDefaultsFile returns the location of the defaults file at the root of
+// the step tree.
+func BaseDefaultsFile() string {
+	return filepath.Join(BasePath(), "config", "defaults.json")
+}
+
+// ProfileDefaultsFile returns the location of the defaults file at the base
+// of the profile path.
+func ProfileDefaultsFile() string {
 	return filepath.Join(ProfilePath(), "config", "defaults.json")
 }
 
 // ConfigFile returns the location of the config file.
 func ConfigFile() string {
 	return filepath.Join(Path(), "config", "ca.json")
+}
+
+// ContextsFile returns the location of the config file.
+func ContextsFile() string {
+	return filepath.Join(BasePath(), "contexts.json")
+}
+
+// CurrentContextFile returns the path to the file containing the current context.
+func CurrentContextFile() string {
+	return filepath.Join(BasePath(), "current-context.json")
 }
 
 // Home returns the user home directory using the environment variable HOME or
@@ -297,52 +356,6 @@ func Abs(path string) string {
 	default:
 		return filepath.Join(Path(), path)
 	}
-}
-
-func init() {
-	l := log.New(os.Stderr, "", 0)
-
-	// Get home path from environment or from the user object.
-	homePath = os.Getenv(HomeEnv)
-	if homePath == "" {
-		usr, err := user.Current()
-		if err == nil && usr.HomeDir != "" {
-			homePath = usr.HomeDir
-		} else {
-			l.Fatalf("Error obtaining home directory, please define environment variable %s.", HomeEnv)
-		}
-	}
-
-	// Get step path from environment or relative to home.
-	stepBasePath = os.Getenv(PathEnv)
-	if stepBasePath == "" {
-		stepBasePath = filepath.Join(homePath, ".step")
-	}
-
-	// Load Context Map if one exists.
-	if err := loadContextMap(); err != nil {
-		l.Fatal(err.Error())
-	}
-	// Set the current context if one exists.
-	if err := setDefaultCurrentContext(); err != nil {
-		l.Fatal(err.Error())
-	}
-
-	if currentCtx == nil {
-		// Check for presence or attempt to create it if necessary.
-		//
-		// Some environments (e.g. third party docker images) might fail creating
-		// the directory, so this should not panic if it can't.
-		if fi, err := os.Stat(stepBasePath); err != nil {
-			os.MkdirAll(stepBasePath, 0700)
-		} else if !fi.IsDir() {
-			l.Fatalf("File '%s' is not a directory.", stepBasePath)
-		}
-	}
-
-	// cleanup
-	homePath = filepath.Clean(homePath)
-	stepBasePath = filepath.Clean(stepBasePath)
 }
 
 // Set updates the Version and ReleaseDate

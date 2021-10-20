@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -88,8 +87,8 @@ func getConfigVars(ctx *cli.Context) error {
 	if ctx.IsSet("context") {
 		ctxStr = ctx.String("context")
 	} else if step.GetCurrentContext() == nil {
-		contextsFile := filepath.Join(step.BasePath(), "contexts.json")
-		if _, err := os.Stat(contextsFile); !os.IsNotExist(err) {
+		ctxFile := step.ContextFile()
+		if _, err := os.Stat(ctxFile); !os.IsNotExist(err) {
 			// Select context
 			ctxMap := step.GetContextMap()
 			var items []*contextSelect
@@ -125,7 +124,7 @@ func getConfigVars(ctx *cli.Context) error {
 	if step.GetCurrentContext() == nil {
 		configFile := ctx.GlobalString("config")
 		if configFile == "" {
-			configFile = filepath.Join(step.BasePath(), "config", "defaults.json")
+			configFile = step.BaseDefaultsFile()
 		}
 
 		_, err := os.Stat(configFile)
@@ -150,39 +149,39 @@ func getConfigVars(ctx *cli.Context) error {
 		}
 
 		authorityMap := make(map[string]interface{})
-		authorityConfigFile := filepath.Join(step.Path(), "config", "defaults.json")
-		_, err := os.Stat(authorityConfigFile)
+		def := step.DefaultsFile()
+		_, err := os.Stat(def)
 		switch {
 		case os.IsNotExist(err):
 			break
 		case err != nil:
 			return err
 		default:
-			b, err := ioutil.ReadFile(filepath.Join(authorityConfigFile))
+			b, err := ioutil.ReadFile(def)
 			if err != nil {
-				return errs.FileError(err, authorityConfigFile)
+				return errs.FileError(err, def)
 			}
 
 			if err := json.Unmarshal(b, &authorityMap); err != nil {
-				return errors.Wrapf(err, "error parsing %s", authorityConfigFile)
+				return errors.Wrapf(err, "error parsing %s", def)
 			}
 		}
 
 		profileMap := make(map[string]interface{})
-		profileConfigFile := filepath.Join(step.ProfilePath(), "config", "defaults.json")
-		_, err = os.Stat(profileConfigFile)
+		profDef := step.ProfileDefaultsFile()
+		_, err = os.Stat(profDef)
 		switch {
 		case os.IsNotExist(err):
 			break
 		case err != nil:
 			return err
 		default:
-			b, err := ioutil.ReadFile(profileConfigFile)
+			b, err := ioutil.ReadFile(profDef)
 			if err != nil {
 				return nil
 			}
 			if err := json.Unmarshal(b, &profileMap); err != nil {
-				return errors.Wrapf(err, "error parsing %s", profileConfigFile)
+				return errors.Wrapf(err, "error parsing %s", profDef)
 			}
 		}
 
