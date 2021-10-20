@@ -87,7 +87,7 @@ func getConfigVars(ctx *cli.Context) error {
 	if ctx.IsSet("context") {
 		ctxStr = ctx.String("context")
 	} else if step.GetCurrentContext() == nil {
-		ctxFile := step.ContextFile()
+		ctxFile := step.ContextsFile()
 		if _, err := os.Stat(ctxFile); !os.IsNotExist(err) {
 			// Select context
 			ctxMap := step.GetContextMap()
