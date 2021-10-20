@@ -121,7 +121,7 @@ func (r *Renderer) renderParagraphKeepBreaks(buf *bytes.Buffer) {
 }
 
 func (r *Renderer) renderParagraphBreakLines(buf *bytes.Buffer, maxlen int) {
-	maxlen = maxlen - r.depth
+	maxlen -= r.depth
 	scanner := bufio.NewScanner(buf)
 	scanner.Split(bufio.ScanWords)
 	line := []string{}
@@ -131,13 +131,14 @@ func (r *Renderer) renderParagraphBreakLines(buf *bytes.Buffer, maxlen int) {
 		wordLength := len(stripColors([]byte(word)))
 		// Print the line if we've got a collection of words over 80 characters, or if
 		// we have a single word that is over 80 characters on an otherwise empty line.
-		if length+wordLength > maxlen {
+		switch {
+		case length+wordLength > maxlen:
 			r.printf(strings.Repeat(" ", r.depth)+"%s\n", strings.Join(line, " "))
 			line = []string{word}
 			length = wordLength
-		} else if length == 0 && wordLength > maxlen {
+		case length == 0 && wordLength > maxlen:
 			r.printf(strings.Repeat(" ", r.depth)+"%s\n", word)
-		} else {
+		default:
 			line = append(line, word)
 			length += wordLength + 1 // Plus one for space
 		}
@@ -189,7 +190,7 @@ func (r *Renderer) RenderNode(w io.Writer, node *md.Node, entering bool) md.Walk
 		if r.inParagraph() {
 			r.write(node.Literal)
 		} else {
-			s := strings.Replace(string(node.Literal), "\n", "\n"+strings.Repeat(" ", r.depth), -1)
+			s := strings.ReplaceAll(string(node.Literal), "\n", "\n"+strings.Repeat(" ", r.depth))
 			r.printf(s)
 		}
 	case md.Heading:

@@ -18,9 +18,7 @@ func TestOptions(t *testing.T) {
 	)
 
 	temp := timeNowUTC
-	timeNowUTC = func() time.Time {
-		return now.UTC()
-	}
+	timeNowUTC = now.UTC
 	t.Cleanup(func() {
 		timeNowUTC = temp
 	})

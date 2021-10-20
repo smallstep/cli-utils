@@ -250,6 +250,21 @@ func ContextsFile() string {
 	return filepath.Join(stepBasePath, "contexts.json")
 }
 
+// IdentityFile returns the location of the identity file.
+func IdentityFile() string {
+	return filepath.Join(ProfilePath(), "config", "identity.json")
+}
+
+// DefaultsFile returns the location of the defaults file.
+func DefaultsFile() string {
+	return filepath.Join(ProfilePath(), "config", "defaults.json")
+}
+
+// ConfigFile returns the location of the config file.
+func ConfigFile() string {
+	return filepath.Join(Path(), "config", "ca.json")
+}
+
 // Home returns the user home directory using the environment variable HOME or
 // the os/user package.
 func Home() string {

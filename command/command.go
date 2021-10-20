@@ -66,7 +66,7 @@ type contextSelect struct {
 //
 // TODO(mariano): right now it only supports parameters at first level.
 func getConfigVars(ctx *cli.Context) error {
-	fullCommandName := ctx.Command.FullName()
+	fullCommandName := strings.ToLower(strings.TrimSpace(ctx.Command.FullName()))
 
 	// Do not attempt to load context for the following subcommands.
 	noContextList := []string{
@@ -75,9 +75,10 @@ func getConfigVars(ctx *cli.Context) error {
 		"context list",
 		"context remove",
 		"context select",
+		"ssh config",
 	}
 	for _, k := range noContextList {
-		if fullCommandName == k {
+		if strings.EqualFold(fullCommandName, k) {
 			return nil
 		}
 	}
@@ -114,7 +115,6 @@ func getConfigVars(ctx *cli.Context) error {
 			}
 		}
 	}
-
 	if ctxStr != "" {
 		if err := step.SwitchCurrentContext(ctxStr); err != nil {
 			return err
@@ -233,7 +233,7 @@ func getConfigVars(ctx *cli.Context) error {
 func getEnvVar(name string) string {
 	parts := strings.Split(name, ",")
 	name = strings.TrimSpace(parts[0])
-	name = strings.Replace(name, "-", "_", -1)
+	name = strings.ReplaceAll(name, "-", "_")
 	return "STEP_" + strings.ToUpper(name)
 }
 
