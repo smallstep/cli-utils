@@ -1,9 +1,7 @@
 package step
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -11,9 +9,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
-	"go.step.sm/cli-utils/errs"
 )
 
 // PathEnv defines the name of the environment variable that can overwrite
@@ -24,29 +19,11 @@ const PathEnv = "STEPPATH"
 // default home directory.
 const HomeEnv = "HOME"
 
-// Context represents a Step Path configuration context. A context is the
-// combination of a profile and an authority.
-type Context struct {
-	Name      string `json:"-"`
-	Profile   string `json:"profile"`
-	Authority string `json:"authority"`
-}
-
-// ContextMap represents the map of available Contexts that is stored
-// at the base of the Step Path.
-type ContextMap map[string]*Context
-
 var (
 	// version and buildTime are filled in during build by the Makefile
 	name      = "Smallstep CLI"
 	buildTime = "N/A"
 	commit    = "N/A"
-
-	// currentCtx will be populated in init() with the proper current context
-	// if one exists.
-	currentCtx *Context
-	// ctxMap will be populated in init() with the full map of all contexts.
-	ctxMap = ContextMap{}
 
 	// stepBasePath will be populated in init() with the proper STEPPATH.
 	stepBasePath string
@@ -79,16 +56,10 @@ func init() {
 	homePath = filepath.Clean(homePath)
 	stepBasePath = filepath.Clean(stepBasePath)
 
-	// Load Context Map if one exists.
-	if err := loadContextMap(); err != nil {
-		l.Fatal(err.Error())
-	}
-	// Set the current context if one exists.
-	if err := setDefaultCurrentContext(); err != nil {
-		l.Fatal(err.Error())
-	}
+	// Initialize context state.
+	Contexts().Init()
 
-	if currentCtx == nil {
+	if Contexts().GetCurrent() == nil {
 		// Check for presence or attempt to create it if necessary.
 		//
 		// Some environments (e.g. third party docker images) might fail creating
@@ -99,158 +70,6 @@ func init() {
 			l.Fatalf("File '%s' is not a directory.", stepBasePath)
 		}
 	}
-}
-
-func loadContextMap() error {
-	contextsFile := ContextsFile()
-	_, err := os.Stat(contextsFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	b, err := ioutil.ReadFile(contextsFile)
-	if err != nil {
-		return errs.FileError(err, contextsFile)
-	}
-	if err := json.Unmarshal(b, &ctxMap); err != nil {
-		return errors.Wrap(err, "error unmarshaling context map")
-	}
-	for k, ctx := range ctxMap {
-		ctx.Name = k
-	}
-	return nil
-}
-
-func setDefaultCurrentContext() error {
-	currentCtxFile := CurrentContextFile()
-	_, err := os.Stat(currentCtxFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	b, err := ioutil.ReadFile(currentCtxFile)
-	if err != nil {
-		return errs.FileError(err, currentCtxFile)
-	}
-
-	type currentContextType struct {
-		Context string `json:"context"`
-	}
-	var cct currentContextType
-
-	if err := json.Unmarshal(b, &cct); err != nil {
-		return errors.Wrap(err, "error unmarshaling current context")
-	}
-
-	return SwitchCurrentContext(cct.Context)
-}
-
-// IsContextEnabled returns true if contexts are enabled (the context map is not
-// empty) and false otherwise.
-func IsContextEnabled() bool {
-	return len(ctxMap) > 0
-}
-
-// SwitchCurrentContext switches the current context or returns an error if a context
-// with the given name cannot be loaded.
-//
-// NOTE: this method should only be called from the command package init() method.
-// It only makes sense to switch the context before the context specific flags
-// are set.
-func SwitchCurrentContext(name string) error {
-	var ok bool
-	currentCtx, ok = ctxMap[name]
-	if !ok {
-		return errors.Errorf("could not load context '%s'", name)
-	}
-	return nil
-}
-
-// WriteCurrentContext stores the given context name as the selected default context.
-func WriteCurrentContext(name string) error {
-	if _, ok := GetContext(name); !ok {
-		return errors.Errorf("context '%s' not found", name)
-	}
-
-	type currentCtxType struct {
-		Context string `json:"context"`
-	}
-	def := currentCtxType{Context: name}
-	b, err := json.Marshal(def)
-	if err != nil {
-		return err
-	}
-	if err = ioutil.WriteFile(CurrentContextFile(), b, 0644); err != nil {
-		return errs.FileError(err, CurrentContextFile())
-	}
-	return nil
-}
-
-// GetContext returns the context with the given name.
-func GetContext(name string) (ctx *Context, ok bool) {
-	ctx, ok = ctxMap[name]
-	return
-}
-
-// RemoveContext removes a context from the context map and saves the updated
-// map to disk.
-func RemoveContext(name string) error {
-	if ctxMap == nil {
-		return errors.Errorf("context '%s' not found", name)
-	}
-	if _, ok := ctxMap[name]; !ok {
-		return errors.Errorf("context '%s' not found", name)
-	}
-	delete(ctxMap, name)
-
-	b, err := json.MarshalIndent(ctxMap, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(ContextsFile(), b, 0600); err != nil {
-		return err
-	}
-	return nil
-}
-
-// AddContext adds a new context and writes the updated context map to disk.
-func AddContext(ctx *Context) error {
-	if ctxMap == nil {
-		ctxMap = map[string]*Context{ctx.Name: ctx}
-	} else {
-		ctxMap[ctx.Name] = ctx
-	}
-
-	b, err := json.MarshalIndent(ctxMap, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(ContextsFile(), b, 0600); err != nil {
-		return err
-	}
-
-	if currentCtx == nil {
-		if err := WriteCurrentContext(ctx.Name); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// GetCurrentContext returns the current context.
-func GetCurrentContext() *Context {
-	return currentCtx
-}
-
-// GetContextMap returns the context map.
-func GetContextMap() ContextMap {
-	return ctxMap
 }
 
 // BasePath returns the base path for the step configuration directory.
@@ -266,10 +85,11 @@ func BasePath() string {
 //    method returns the value defined by the environment variable STEPPATH, OR
 // 3) If no environment variable is set, this method returns `$HOME/.step`.
 func Path() string {
-	if currentCtx == nil {
+	c := Contexts().GetCurrent()
+	if c == nil {
 		return BasePath()
 	}
-	return filepath.Join(BasePath(), "authorities", currentCtx.Authority)
+	return filepath.Join(BasePath(), "authorities", c.Authority)
 }
 
 // ProfilePath returns the path for the currently selected profile path.
@@ -280,10 +100,11 @@ func Path() string {
 //    method returns the value defined by the environment variable STEPPATH, OR
 // 3) If no environment variable is set, this method returns `$HOME/.step`.
 func ProfilePath() string {
-	if currentCtx == nil {
+	c := Contexts().GetCurrent()
+	if c == nil {
 		return BasePath()
 	}
-	return filepath.Join(BasePath(), "profiles", currentCtx.Profile)
+	return filepath.Join(BasePath(), "profiles", c.Profile)
 }
 
 // IdentityFile returns the location of the identity file.

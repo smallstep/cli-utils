@@ -83,45 +83,43 @@ func getConfigVars(ctx *cli.Context) error {
 	}
 
 	// Set the current STEPPATH context.
-	var ctxStr string
+	var (
+		ctxStr string
+		cs     = step.Contexts()
+	)
 	if ctx.IsSet("context") {
 		ctxStr = ctx.String("context")
-	} else if step.GetCurrentContext() == nil {
-		ctxFile := step.ContextsFile()
-		if _, err := os.Stat(ctxFile); !os.IsNotExist(err) {
-			// Select context
-			ctxMap := step.GetContextMap()
-			var items []*contextSelect
-			for _, context := range ctxMap {
-				items = append(items, &contextSelect{
-					Name:    context.Name,
-					Context: context,
-				})
-			}
+	} else if cs.GetCurrent() == nil && cs.Enabled() {
+		var items []*contextSelect
+		for _, context := range cs.List() {
+			items = append(items, &contextSelect{
+				Name:    context.Name,
+				Context: context,
+			})
+		}
 
-			if len(items) == 1 {
-				if err := ui.PrintSelected("Context", items[0].Name); err != nil {
-					return err
-				}
-				ctxStr = items[0].Name
-			} else {
-				i, _, err := ui.Select("Select a context for this command:\t(run 'step context select <name>' to set a default context)", items,
-					ui.WithSelectTemplates(ui.NamedSelectTemplates("Context")))
-				if err != nil {
-					return err
-				}
-				ctxStr = items[i].Name
+		if len(items) == 1 {
+			if err := ui.PrintSelected("Context", items[0].Name); err != nil {
+				return err
 			}
+			ctxStr = items[0].Name
+		} else {
+			i, _, err := ui.Select("Select a context for this command:\t(run 'step context select <name>' to set a default context)", items,
+				ui.WithSelectTemplates(ui.NamedSelectTemplates("Context")))
+			if err != nil {
+				return err
+			}
+			ctxStr = items[i].Name
 		}
 	}
 	if ctxStr != "" {
-		if err := step.SwitchCurrentContext(ctxStr); err != nil {
+		if err := cs.Set(ctxStr); err != nil {
 			return err
 		}
 	}
 
 	var m map[string]interface{}
-	if step.GetCurrentContext() == nil {
+	if cs.GetCurrent() == nil {
 		configFile := ctx.GlobalString("config")
 		if configFile == "" {
 			configFile = step.BaseDefaultsFile()
