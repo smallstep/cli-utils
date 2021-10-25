@@ -59,7 +59,7 @@ func init() {
 	// Initialize context state.
 	Contexts().Init()
 
-	if Contexts().GetCurrent() == nil {
+	if Contexts().Enabled() {
 		// Check for presence or attempt to create it if necessary.
 		//
 		// Some environments (e.g. third party docker images) might fail creating

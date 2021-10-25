@@ -4,17 +4,79 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"go.step.sm/cli-utils/errs"
+	"go.step.sm/cli-utils/ui"
 )
 
 // Context represents a Step Path configuration context. A context is the
 // combination of a profile and an authority.
 type Context struct {
-	Name      string `json:"-"`
-	Profile   string `json:"profile"`
-	Authority string `json:"authority"`
+	Name      string                 `json:"-"`
+	Profile   string                 `json:"profile"`
+	Authority string                 `json:"authority"`
+	Config    map[string]interface{} `json:"-"`
+}
+
+// Path return the base path relative to the context.
+func (c *Context) Path() string {
+	return filepath.Join(BasePath(), "authorities", c.Authority)
+}
+
+// ProfilePath return the profile base path relative to the context.
+func (c *Context) ProfilePath() string {
+	return filepath.Join(BasePath(), "profiles", c.Profile)
+}
+
+// DefaultsFile returns the location of the defaults file for the context.
+func (c *Context) DefaultsFile() string {
+	return filepath.Join(c.Path(), "config", "defaults.json")
+}
+
+// ProfileDefaultsFile returns the location of the defaults file at the base
+// of the profile path.
+func (c *Context) ProfileDefaultsFile() string {
+	return filepath.Join(c.ProfilePath(), "config", "defaults.json")
+}
+
+// Load loads the configuration for the given context.
+func (c *Context) Load() error {
+	for _, f := range []string{c.DefaultsFile(), c.ProfileDefaultsFile()} {
+		if _, err := os.Stat(f); os.IsNotExist(err) {
+			break
+		} else if err != nil {
+			return err
+		}
+		b, err := ioutil.ReadFile(f)
+		if err != nil {
+			return errs.FileError(err, f)
+		}
+
+		values := make(map[string]interface{})
+		if err := json.Unmarshal(b, &values); err != nil {
+			return errors.Wrapf(err, "error parsing %s", f)
+		}
+
+		for k, v := range values {
+			c.Config[k] = v
+		}
+	}
+
+	attributesBannedFromConfig := []string{
+		"context",
+		"profile",
+		"authority",
+	}
+	for _, attr := range attributesBannedFromConfig {
+		if _, ok := c.Config[attr]; ok {
+			ui.Printf("cannot set '%s' attribute in config files", attr)
+			delete(m, attr)
+		}
+	}
+
+	return nil
 }
 
 // ContextMap represents the map of available Contexts that is stored
@@ -29,6 +91,7 @@ type storedCurrent struct {
 type CtxState struct {
 	current  *Context
 	contexts ContextMap
+	config   map[string]interface{} `json:"-"`
 }
 
 var ctxState = &CtxState{}
@@ -90,19 +153,59 @@ func (cs *CtxState) initCurrent() error {
 	return cs.Set(sc.Context)
 }
 
+func (cs *CtxState) load() error {
+	if cs.Enabled() {
+		return cs.GetCurrent().Load()
+	} else {
+	}
+}
+
 // Set sets the current context or returns an error if a context
 // with the given name does not exist.
-//
-// NOTE: this method should only be called from the command package init() method.
-// It only makes sense to switch the context before the context specific flags
-// are set.
 func (cs *CtxState) Set(name string) error {
 	var ok bool
 	cs.current, ok = cs.contexts[name]
 	if !ok {
 		return errors.Errorf("could not load context '%s'", name)
 	}
+	if cs.Config == nil || len(cs.Config) == 0 {
+		if err := cs.Load(); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+type contextSelect struct {
+	Name    string
+	Context *step.Context
+}
+
+// UserSelect gets user input to select a context.
+func (cs *CtxState) UserSelect() error {
+	var items []*contextSelect
+	for _, context := range cs.List() {
+		items = append(items, &contextSelect{
+			Name:    context.Name,
+			Context: context,
+		})
+	}
+
+	var ctxStr string
+	if len(items) == 1 {
+		if err := ui.PrintSelected("Context", items[0].Name); err != nil {
+			return err
+		}
+		ctxStr = items[0].Name
+	} else {
+		i, _, err := ui.Select("Select a context for this command:\t(run 'step context select <name>' to set a default context)", items,
+			ui.WithSelectTemplates(ui.NamedSelectTemplates("Context")))
+		if err != nil {
+			return err
+		}
+		ctxStr = items[i].Name
+	}
+	return cs.Set(ctxStr)
 }
 
 // Enabled returns true if one of the following is true:
@@ -166,7 +269,7 @@ func (cs *CtxState) Remove(name string) error {
 		return errors.Errorf("context '%s' not found", name)
 	}
 	if cs.current != nil && cs.current.Name == name {
-		return errors.Errorf("cannot remove current context; use 'step context select' to switch contexts", name)
+		return errors.New("cannot remove current context; use 'step context select' to switch contexts")
 	}
 
 	delete(cs.contexts, name)
