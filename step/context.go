@@ -2,22 +2,30 @@ package step
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/urfave/cli"
 	"go.step.sm/cli-utils/errs"
 	"go.step.sm/cli-utils/ui"
 )
 
+// IgnoreEnvVar is a value added to a flag EnvVar to avoid the use of
+// environment variables or configuration files.
+const IgnoreEnvVar = "STEP_IGNORE_ENV_VAR"
+
 // Context represents a Step Path configuration context. A context is the
 // combination of a profile and an authority.
 type Context struct {
-	Name      string                 `json:"-"`
-	Profile   string                 `json:"profile"`
-	Authority string                 `json:"authority"`
-	Config    map[string]interface{} `json:"-"`
+	Name      string `json:"-"`
+	Profile   string `json:"profile"`
+	Authority string `json:"authority"`
+	config    map[string]interface{}
 }
 
 // Path return the base path relative to the context.
@@ -43,6 +51,7 @@ func (c *Context) ProfileDefaultsFile() string {
 
 // Load loads the configuration for the given context.
 func (c *Context) Load() error {
+	c.config = map[string]interface{}{}
 	for _, f := range []string{c.DefaultsFile(), c.ProfileDefaultsFile()} {
 		if _, err := os.Stat(f); os.IsNotExist(err) {
 			break
@@ -60,7 +69,7 @@ func (c *Context) Load() error {
 		}
 
 		for k, v := range values {
-			c.Config[k] = v
+			c.config[k] = v
 		}
 	}
 
@@ -70,9 +79,9 @@ func (c *Context) Load() error {
 		"authority",
 	}
 	for _, attr := range attributesBannedFromConfig {
-		if _, ok := c.Config[attr]; ok {
+		if _, ok := c.config[attr]; ok {
 			ui.Printf("cannot set '%s' attribute in config files", attr)
-			delete(m, attr)
+			delete(c.config, attr)
 		}
 	}
 
@@ -97,14 +106,17 @@ type CtxState struct {
 var ctxState = &CtxState{}
 
 // Init initializes the context map and current context state.
-func (cs *CtxState) Init() (err error) {
-	if err = cs.initMap(); err != nil {
+func (cs *CtxState) Init() error {
+	if err := cs.initMap(); err != nil {
 		return err
 	}
-	if err = cs.initCurrent(); err != nil {
+	if err := cs.initCurrent(); err != nil {
 		return err
 	}
-	return
+	if err := cs.load(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (cs *CtxState) initMap() error {
@@ -150,26 +162,60 @@ func (cs *CtxState) initCurrent() error {
 		return errors.Wrap(err, "error unmarshaling current context")
 	}
 
-	return cs.Set(sc.Context)
+	return cs.SetCurrent(sc.Context)
 }
 
 func (cs *CtxState) load() error {
 	if cs.Enabled() {
 		return cs.GetCurrent().Load()
-	} else {
 	}
+	cs.LoadVintage("")
+	return nil
 }
 
-// Set sets the current context or returns an error if a context
+// LoadVintage loads context configuration from the vintage (non-context) path.
+func (cs *CtxState) LoadVintage(f string) error {
+	//configFile := ctx.GlobalString("config")
+	if f == "" {
+		f = BaseDefaultsFile()
+	}
+
+	if _, err := os.Stat(f); err != nil {
+		return nil
+	}
+	b, err := ioutil.ReadFile(f)
+	if err != nil {
+		return nil
+	}
+	cs.config = make(map[string]interface{})
+	if err := json.Unmarshal(b, &cs.config); err != nil {
+		return errors.Wrapf(err, "error parsing %s", f)
+	}
+	return nil
+}
+
+// GetConfig returns the current context configuration.
+func (cs *CtxState) GetConfig() (map[string]interface{}, error) {
+	if cs.Enabled() {
+		cur := cs.GetCurrent()
+		if cur == nil {
+			return nil, errors.New("cannot get context configuration; no current context set")
+		}
+		return cur.config, nil
+	}
+	return cs.config, nil
+}
+
+// SetCurrent sets the current context or returns an error if a context
 // with the given name does not exist.
-func (cs *CtxState) Set(name string) error {
+func (cs *CtxState) SetCurrent(name string) error {
 	var ok bool
 	cs.current, ok = cs.contexts[name]
 	if !ok {
 		return errors.Errorf("could not load context '%s'", name)
 	}
-	if cs.Config == nil || len(cs.Config) == 0 {
-		if err := cs.Load(); err != nil {
+	if cs.current.config == nil || len(cs.current.config) == 0 {
+		if err := cs.current.Load(); err != nil {
 			return err
 		}
 	}
@@ -178,11 +224,11 @@ func (cs *CtxState) Set(name string) error {
 
 type contextSelect struct {
 	Name    string
-	Context *step.Context
+	Context *Context
 }
 
-// UserSelect gets user input to select a context.
-func (cs *CtxState) UserSelect() error {
+// UserSelectCurrent gets user input to select a context.
+func (cs *CtxState) UserSelectCurrent() error {
 	var items []*contextSelect
 	for _, context := range cs.List() {
 		items = append(items, &contextSelect{
@@ -205,7 +251,7 @@ func (cs *CtxState) UserSelect() error {
 		}
 		ctxStr = items[i].Name
 	}
-	return cs.Set(ctxStr)
+	return cs.SetCurrent(ctxStr)
 }
 
 // Enabled returns true if one of the following is true:
@@ -287,7 +333,7 @@ func (cs *CtxState) Remove(name string) error {
 
 // List returns a list of all contexts.
 func (cs *CtxState) List() []*Context {
-	l := make([]*Context, len(cs.contexts))
+	l := make([]*Context, 0, len(cs.contexts))
 
 	for _, v := range cs.contexts {
 		l = append(l, v)
@@ -313,5 +359,185 @@ func (cs *CtxState) SaveCurrent(name string) error {
 	if err = ioutil.WriteFile(CurrentContextFile(), b, 0644); err != nil {
 		return errs.FileError(err, CurrentContextFile())
 	}
+	return nil
+}
+
+// Apply the current context configuration to the command line environment.
+func (cs *CtxState) Apply(ctx *cli.Context) error {
+	cfg, err := cs.GetConfig()
+	if err != nil {
+		return err
+	}
+	for _, f := range ctx.Command.Flags {
+		// Skip if EnvVar == IgnoreEnvVar
+		if getFlagEnvVar(f) == IgnoreEnvVar {
+			continue
+		}
+
+		for _, name := range strings.Split(f.GetName(), ",") {
+			name = strings.TrimSpace(name)
+			if ctx.IsSet(name) {
+				break
+			}
+			// Set the flag for the first key that matches.
+			if v, ok := cfg[name]; ok {
+				ctx.Set(name, fmt.Sprintf("%v", v))
+				break
+			}
+		}
+	}
+	return nil
+}
+
+// getEnvVar generates the environment variable for the given flag name.
+func getEnvVar(name string) string {
+	parts := strings.Split(name, ",")
+	name = strings.TrimSpace(parts[0])
+	name = strings.ReplaceAll(name, "-", "_")
+	return "STEP_" + strings.ToUpper(name)
+}
+
+// getFlagEnvVar returns the value of the EnvVar field of a flag.
+func getFlagEnvVar(f cli.Flag) string {
+	v := reflect.ValueOf(f)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() == reflect.Struct {
+		envVar := v.FieldByName("EnvVar")
+		if envVar.IsValid() {
+			return envVar.String()
+		}
+	}
+	return ""
+}
+
+// SetEnvVar sets the the EnvVar element to each flag recursively.
+func SetEnvVar(c *cli.Command) {
+	if c == nil {
+		return
+	}
+
+	// Enable getting the flags from a json file
+	if c.Before == nil && c.Action != nil {
+		c.Before = getConfigVars
+	}
+
+	// Enable getting the flags from environment variables
+	for i := range c.Flags {
+		envVar := getEnvVar(c.Flags[i].GetName())
+		switch f := c.Flags[i].(type) {
+		case cli.BoolFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.BoolTFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.DurationFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.Float64Flag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.GenericFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.Int64Flag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.IntFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.IntSliceFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.Int64SliceFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.StringFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.StringSliceFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.Uint64Flag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		case cli.UintFlag:
+			if f.EnvVar == "" {
+				f.EnvVar = envVar
+				c.Flags[i] = f
+			}
+		}
+	}
+
+	for i := range c.Subcommands {
+		SetEnvVar(&c.Subcommands[i])
+	}
+}
+
+// GetConfigVars load the defaults.json file and sets the flags if they are not
+// already set or the EnvVar is set to IgnoreEnvVar.
+//
+// TODO(mariano): right now it only supports parameters at first level.
+func getConfigVars(ctx *cli.Context) (err error) {
+	if ctx.Int("no-context") == 1 {
+		return nil
+	}
+
+	cs := Contexts()
+
+	// Load the the current context into memory:
+	//  - If contexts enabled then make sure a current context is selected
+	//    and loaded.
+	//  - If vintage context then check if overwritten by --config flag.
+	if cs.Enabled() {
+		if ctx.IsSet("context") {
+			err = cs.SetCurrent(ctx.String("context"))
+		} else if cs.Enabled() && cs.GetCurrent() == nil {
+			err = cs.UserSelectCurrent()
+		}
+		if err != nil {
+			return err
+		}
+	} else if ctx.GlobalString("config") != "" {
+		// Re-load the vintage context configuration if `--config` flag supplied.
+		cs.LoadVintage(ctx.GlobalString("config"))
+	}
+
+	// TODO
+	fullCommandName := strings.ToLower(strings.TrimSpace(ctx.Command.FullName()))
+	if strings.EqualFold(fullCommandName, "ca bootstrap-helper") {
+		return nil
+	}
+
+	if err := cs.Apply(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
