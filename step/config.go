@@ -23,7 +23,7 @@ var (
 	// version and buildTime are filled in during build by the Makefile
 	name      = "Smallstep CLI"
 	buildTime = "N/A"
-	commit    = "N/A"
+	version   = "N/A"
 
 	// stepBasePath will be populated in init() with the proper STEPPATH.
 	stepBasePath string
@@ -118,20 +118,15 @@ func DefaultsFile() string {
 	return filepath.Join(Path(), "config", "defaults.json")
 }
 
-// BaseDefaultsFile returns the location of the defaults file at the root of
-// the step tree.
-func BaseDefaultsFile() string {
-	return filepath.Join(BasePath(), "config", "defaults.json")
-}
-
 // ProfileDefaultsFile returns the location of the defaults file at the base
 // of the profile path.
 func ProfileDefaultsFile() string {
 	return filepath.Join(ProfilePath(), "config", "defaults.json")
 }
 
-// ConfigFile returns the location of the config file.
-func ConfigFile() string {
+// CaConfigFile returns the location of the ca.json file -- configuration for
+// connecting to the CA.
+func CaConfigFile() string {
 	return filepath.Join(Path(), "config", "ca.json")
 }
 
@@ -179,17 +174,17 @@ func Abs(path string) string {
 	}
 }
 
-// Set updates the Version and ReleaseDate
+// Set updates the name, build time, Version
 func Set(n, v, t string) {
 	name = n
 	buildTime = t
-	commit = v
+	version = v
 }
 
 // Version returns the current version of the binary
 func Version() string {
-	out := commit
-	if commit == "N/A" {
+	out := version
+	if version == "N/A" {
 		out = "0000000-dev"
 	}
 

@@ -28,6 +28,21 @@ type Context struct {
 	config    map[string]interface{}
 }
 
+// Validate validates a context and returns an error if invalid.
+func (c *Context) Validate() error {
+	suffix := "; check your $STEPPATH/contexts.json file"
+	if c == nil {
+		return errors.Errorf("context cannot be nil%s", suffix)
+	}
+	if c.Profile == "" {
+		return errors.Errorf("context cannot have an empty profile value%s", suffix)
+	}
+	if c.Authority == "" {
+		return errors.Errorf("context cannot have an empty authority value%s", suffix)
+	}
+	return nil
+}
+
 // Path return the base path relative to the context.
 func (c *Context) Path() string {
 	return filepath.Join(BasePath(), "authorities", c.Authority)
@@ -54,7 +69,7 @@ func (c *Context) Load() error {
 	c.config = map[string]interface{}{}
 	for _, f := range []string{c.DefaultsFile(), c.ProfileDefaultsFile()} {
 		if _, err := os.Stat(f); os.IsNotExist(err) {
-			break
+			continue
 		} else if err != nil {
 			return err
 		}
@@ -80,7 +95,7 @@ func (c *Context) Load() error {
 	}
 	for _, attr := range attributesBannedFromConfig {
 		if _, ok := c.config[attr]; ok {
-			ui.Printf("cannot set '%s' attribute in config files", attr)
+			ui.Printf("cannot set '%s' attribute in config files\n", attr)
 			delete(c.config, attr)
 		}
 	}
@@ -100,7 +115,7 @@ type storedCurrent struct {
 type CtxState struct {
 	current  *Context
 	contexts ContextMap
-	config   map[string]interface{} `json:"-"`
+	config   map[string]interface{}
 }
 
 var ctxState = &CtxState{}
@@ -137,6 +152,9 @@ func (cs *CtxState) initMap() error {
 		return errors.Wrap(err, "error unmarshaling context map")
 	}
 	for k, ctx := range cs.contexts {
+		if err := ctx.Validate(); err != nil {
+			return errors.Wrapf(err, "error in context '%s'", k)
+		}
 		ctx.Name = k
 	}
 	return nil
@@ -175,9 +193,8 @@ func (cs *CtxState) load() error {
 
 // LoadVintage loads context configuration from the vintage (non-context) path.
 func (cs *CtxState) LoadVintage(f string) error {
-	//configFile := ctx.GlobalString("config")
 	if f == "" {
-		f = BaseDefaultsFile()
+		f = DefaultsFile()
 	}
 
 	if _, err := os.Stat(f); err != nil {
@@ -269,6 +286,9 @@ func Contexts() *CtxState {
 // Add adds a new context to the context map. If current context is not
 // set then store the new context as the current context for future commands.
 func (cs *CtxState) Add(ctx *Context) error {
+	if err := ctx.Validate(); err != nil {
+		return errors.Wrapf(err, "error adding context")
+	}
 	if cs.contexts == nil {
 		cs.contexts = map[string]*Context{ctx.Name: ctx}
 	} else {
@@ -335,8 +355,10 @@ func (cs *CtxState) Remove(name string) error {
 func (cs *CtxState) List() []*Context {
 	l := make([]*Context, 0, len(cs.contexts))
 
+	i := 0
 	for _, v := range cs.contexts {
-		l = append(l, v)
+		l[i] = v
+		i++
 	}
 	return l
 }
@@ -348,11 +370,7 @@ func (cs *CtxState) SaveCurrent(name string) error {
 		return errors.Errorf("context '%s' not found", name)
 	}
 
-	type currentCtxType struct {
-		Context string `json:"context"`
-	}
-	def := currentCtxType{Context: name}
-	b, err := json.Marshal(def)
+	b, err := json.Marshal(storedCurrent{Context: name})
 	if err != nil {
 		return err
 	}
