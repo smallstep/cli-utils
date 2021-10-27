@@ -68,13 +68,10 @@ func (c *Context) ProfileDefaultsFile() string {
 func (c *Context) Load() error {
 	c.config = map[string]interface{}{}
 	for _, f := range []string{c.DefaultsFile(), c.ProfileDefaultsFile()} {
-		if _, err := os.Stat(f); os.IsNotExist(err) {
+		b, err := ioutil.ReadFile(f)
+		if os.IsNotExist(err) {
 			continue
 		} else if err != nil {
-			return err
-		}
-		b, err := ioutil.ReadFile(f)
-		if err != nil {
 			return errs.FileError(err, f)
 		}
 
@@ -136,15 +133,10 @@ func (cs *CtxState) Init() error {
 
 func (cs *CtxState) initMap() error {
 	contextsFile := ContextsFile()
-	_, err := os.Stat(contextsFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
 	b, err := ioutil.ReadFile(contextsFile)
-	if err != nil {
+	if os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
 		return errs.FileError(err, contextsFile)
 	}
 	cs.contexts = ContextMap{}
@@ -162,20 +154,14 @@ func (cs *CtxState) initMap() error {
 
 func (cs *CtxState) initCurrent() error {
 	currentCtxFile := CurrentContextFile()
-	_, err := os.Stat(currentCtxFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
 	b, err := ioutil.ReadFile(currentCtxFile)
-	if err != nil {
+	if os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
 		return errs.FileError(err, currentCtxFile)
 	}
 
 	var sc storedCurrent
-
 	if err := json.Unmarshal(b, &sc); err != nil {
 		return errors.Wrap(err, "error unmarshaling current context")
 	}
@@ -184,7 +170,7 @@ func (cs *CtxState) initCurrent() error {
 }
 
 func (cs *CtxState) load() error {
-	if cs.Enabled() {
+	if cs.Enabled() && cs.GetCurrent() != nil {
 		return cs.GetCurrent().Load()
 	}
 	cs.LoadVintage("")
@@ -197,13 +183,13 @@ func (cs *CtxState) LoadVintage(f string) error {
 		f = DefaultsFile()
 	}
 
-	if _, err := os.Stat(f); err != nil {
-		return nil
-	}
 	b, err := ioutil.ReadFile(f)
-	if err != nil {
+	if os.IsNotExist(err) {
 		return nil
+	} else if err != nil {
+		return errs.FileError(err, f)
 	}
+
 	cs.config = make(map[string]interface{})
 	if err := json.Unmarshal(b, &cs.config); err != nil {
 		return errors.Wrapf(err, "error parsing %s", f)
@@ -231,7 +217,7 @@ func (cs *CtxState) SetCurrent(name string) error {
 	if !ok {
 		return errors.Errorf("could not load context '%s'", name)
 	}
-	if cs.current.config == nil || len(cs.current.config) == 0 {
+	if len(cs.current.config) == 0 {
 		if err := cs.current.Load(); err != nil {
 			return err
 		}
@@ -244,8 +230,8 @@ type contextSelect struct {
 	Context *Context
 }
 
-// UserSelectCurrent gets user input to select a context.
-func (cs *CtxState) UserSelectCurrent() error {
+// PromptContext gets user input to select a context.
+func (cs *CtxState) PromptContext() error {
 	var items []*contextSelect
 	for _, context := range cs.List() {
 		items = append(items, &contextSelect{
@@ -328,9 +314,6 @@ func (cs *CtxState) Get(name string) (ctx *Context, ok bool) {
 
 // Remove removes a context from the context state.
 func (cs *CtxState) Remove(name string) error {
-	if cs.contexts == nil {
-		return errors.Errorf("context '%s' not found", name)
-	}
 	if _, ok := cs.contexts[name]; !ok {
 		return errors.Errorf("context '%s' not found", name)
 	}
@@ -355,10 +338,8 @@ func (cs *CtxState) Remove(name string) error {
 func (cs *CtxState) List() []*Context {
 	l := make([]*Context, 0, len(cs.contexts))
 
-	i := 0
 	for _, v := range cs.contexts {
-		l[i] = v
-		i++
+		l = append(l, v)
 	}
 	return l
 }
@@ -537,7 +518,7 @@ func getConfigVars(ctx *cli.Context) (err error) {
 		if ctx.IsSet("context") {
 			err = cs.SetCurrent(ctx.String("context"))
 		} else if cs.Enabled() && cs.GetCurrent() == nil {
-			err = cs.UserSelectCurrent()
+			err = cs.PromptContext()
 		}
 		if err != nil {
 			return err

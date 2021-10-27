@@ -174,11 +174,11 @@ func Abs(path string) string {
 	}
 }
 
-// Set updates the name, build time, Version
+// Set updates the name, version, and build time
 func Set(n, v, t string) {
 	name = n
-	buildTime = t
 	version = v
+	buildTime = t
 }
 
 // Version returns the current version of the binary
