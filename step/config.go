@@ -109,7 +109,7 @@ func ProfilePath() string {
 
 // IdentityFile returns the location of the identity file.
 func IdentityFile() string {
-	return filepath.Join(ProfilePath(), "config", "identity.json")
+	return filepath.Join(Path(), "config", "identity.json")
 }
 
 // DefaultsFile returns the location of the defaults file at the base of the

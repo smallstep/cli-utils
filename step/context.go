@@ -34,11 +34,11 @@ func (c *Context) Validate() error {
 	if c == nil {
 		return errors.Errorf("context cannot be nil%s", suffix)
 	}
-	if c.Profile == "" {
-		return errors.Errorf("context cannot have an empty profile value%s", suffix)
-	}
 	if c.Authority == "" {
 		return errors.Errorf("context cannot have an empty authority value%s", suffix)
+	}
+	if c.Profile == "" {
+		return errors.Errorf("context cannot have an empty profile value%s", suffix)
 	}
 	return nil
 }
@@ -504,7 +504,7 @@ func SetEnvVar(c *cli.Command) {
 //
 // TODO(mariano): right now it only supports parameters at first level.
 func getConfigVars(ctx *cli.Context) (err error) {
-	if ctx.Int("no-context") == 1 {
+	if ctx.Bool("no-context") {
 		return nil
 	}
 
