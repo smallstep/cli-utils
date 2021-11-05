@@ -286,8 +286,12 @@ func (cs *CtxState) Add(ctx *Context) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(ContextsFile(), b, 0600); err != nil {
-		return err
+	cf := ContextsFile()
+	if err := os.MkdirAll(filepath.Dir(cf), 0700); err != nil {
+		return errs.FileError(err, cf)
+	}
+	if err := ioutil.WriteFile(cf, b, 0600); err != nil {
+		return errs.FileError(err, cf)
 	}
 
 	if cs.current == nil {
