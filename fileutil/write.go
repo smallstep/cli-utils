@@ -85,9 +85,7 @@ func AppendNewLine(filename string, data []byte, perm os.FileMode) error {
 	return f.Close()
 }
 
-// WriteSnippet writes the given data on the given filename. It surrounds the
-// data with a header and footer, and it will replace the previous one.
-func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
+func writeSnippet(filename string, data []byte, isFullSnippet bool, header, footer string, perm os.FileMode) error {
 	// Get file permissions
 	if st, err := os.Stat(filename); err == nil {
 		perm = st.Mode()
@@ -102,7 +100,7 @@ func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
 	}
 
 	// Detect previous configuration
-	_, start, end := findConfiguration(bytes.NewReader(b))
+	_, start, end := findConfiguration(bytes.NewReader(b), header)
 
 	// Replace previous configuration
 	f, err := OpenFile(filename, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, perm)
@@ -115,16 +113,32 @@ func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
 			f.WriteString("\n")
 		}
 	}
-	f.WriteString(fmt.Sprintf("%s @ %s\n", SnippetHeader, time.Now().UTC().Format(time.RFC3339)))
+	if !isFullSnippet {
+		f.WriteString(fmt.Sprintf("%s @ %s\n", header, time.Now().UTC().Format(time.RFC3339)))
+	}
 	f.Write(data)
 	if !bytes.HasSuffix(data, []byte("\n")) {
 		f.WriteString("\n")
 	}
-	f.WriteString(SnippetFooter + "\n")
+	if !isFullSnippet {
+		f.WriteString(footer + "\n")
+	}
 	if len(b) > 0 {
 		f.Write(b[end:])
 	}
 	return f.Close()
+}
+
+// WriteSnippet writes the given data into the given filename. It surrounds the
+// data with a default header and footer, and it will replace the previous one.
+func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
+	return writeSnippet(filename, data, false, SnippetHeader, SnippetFooter, perm)
+}
+
+// WriteFullSnippet writes the given data into the given filename. The data is
+// expected to have it's own header and footer and will not use the defaults.
+func WriteFullSnippet(filename string, data []byte, header, footer string, perm os.FileMode) error {
+	return writeSnippet(filename, data, true, header, footer, perm)
 }
 
 type offsetCounter struct {
@@ -137,7 +151,7 @@ func (o *offsetCounter) ScanLines(data []byte, atEOF bool) (advance int, token [
 	return
 }
 
-func findConfiguration(r io.Reader) (lines []string, start, end int64) {
+func findConfiguration(r io.Reader, header string) (lines []string, start, end int64) {
 	var inConfig bool
 	counter := new(offsetCounter)
 	scanner := bufio.NewScanner(r)
@@ -145,7 +159,7 @@ func findConfiguration(r io.Reader) (lines []string, start, end int64) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		switch {
-		case !inConfig && strings.HasPrefix(line, SnippetHeader):
+		case !inConfig && strings.HasPrefix(line, header):
 			inConfig = true
 			start = counter.offset - int64(len(line)+1)
 		case inConfig && strings.HasPrefix(line, SnippetFooter):
