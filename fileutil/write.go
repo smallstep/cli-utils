@@ -134,10 +134,70 @@ func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
 	return writeChunk(filename, data, false, SnippetHeader, SnippetFooter, perm)
 }
 
-// WriteFragment writes the given data into the given filename. The data is
-// expected to have it's own header and footer and will not use the defaults.
-func WriteFragment(filename string, data []byte, header, footer string, perm os.FileMode) error {
-	return writeChunk(filename, data, true, header, footer, perm)
+// WriteLine prepends the given line into the given filename and removes
+// other instances of the line in the file.
+func WriteLine(filename string, data []byte, perm os.FileMode) error {
+	// Get file permissions
+	if st, err := os.Stat(filename); err == nil {
+		perm = st.Mode()
+	} else if !os.IsNotExist(err) {
+		return FileError(err, filename)
+	}
+
+	// Read file contents
+	b, err := os.ReadFile(filename)
+	if err != nil && !os.IsNotExist(err) {
+		return FileError(err, filename)
+	}
+
+	line := string(data)
+	result := []string{string(data)}
+	for _, l := range strings.Split(string(b), "\n") {
+		if l != "" && !strings.HasPrefix(l, line) {
+			result = append(result, l)
+		}
+	}
+
+	if err := os.WriteFile(filename, []byte(strings.Join(result, "\n")), perm); err != nil {
+		return FileError(err, filename)
+	}
+	return nil
+}
+
+// RemoveLine removes a single line which contains the given substring from the
+// given file.
+func RemoveLine(filename string, substr string) error {
+	var perm os.FileMode
+	// Get file permissions
+	st, err := os.Stat(filename)
+	switch {
+	case os.IsNotExist(err):
+		return nil
+	case err != nil:
+		return FileError(err, filename)
+	default:
+		perm = st.Mode()
+	}
+
+	// Read file contents
+	b, err := os.ReadFile(filename)
+	if err != nil && !os.IsNotExist(err) {
+		return FileError(err, filename)
+	}
+
+	old := strings.Split(string(b), "\n")
+	for i, l := range old {
+		if !strings.Contains(l, substr) {
+			continue
+		}
+		result := append(old[:i], old[i+1:]...)
+		if err := os.WriteFile(filename, []byte(strings.Join(result, "\n")), perm); err != nil {
+			return FileError(err, filename)
+		}
+		break
+	}
+
+	return nil
 }
 
 type offsetCounter struct {
