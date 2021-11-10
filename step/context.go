@@ -308,9 +308,6 @@ func (cs *CtxState) GetCurrent() *Context {
 
 // Get returns the context with the given name.
 func (cs *CtxState) Get(name string) (ctx *Context, ok bool) {
-	if cs.contexts == nil {
-		return nil, false
-	}
 	ctx, ok = cs.contexts[name]
 	return
 }
