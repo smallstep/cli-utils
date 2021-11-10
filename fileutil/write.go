@@ -166,7 +166,7 @@ func WriteLine(filename string, data []byte, perm os.FileMode) error {
 
 // RemoveLine removes a single line which contains the given substring from the
 // given file.
-func RemoveLine(filename string, substr string) error {
+func RemoveLine(filename, substr string) error {
 	var perm os.FileMode
 	// Get file permissions
 	st, err := os.Stat(filename)
@@ -190,8 +190,7 @@ func RemoveLine(filename string, substr string) error {
 		if !strings.Contains(l, substr) {
 			continue
 		}
-		result := append(old[:i], old[i+1:]...)
-		if err := os.WriteFile(filename, []byte(strings.Join(result, "\n")), perm); err != nil {
+		if err := os.WriteFile(filename, []byte(strings.Join(append(old[:i], old[i+1:]...), "\n")), perm); err != nil {
 			return FileError(err, filename)
 		}
 		break
