@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -37,13 +36,13 @@ var (
 // file if exists will be overwritten.
 func WriteFile(filename string, data []byte, perm os.FileMode) error {
 	if command.IsForce() {
-		return ioutil.WriteFile(filename, data, perm)
+		return os.WriteFile(filename, data, perm)
 	}
 
 	st, err := os.Stat(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return ioutil.WriteFile(filename, data, perm)
+			return os.WriteFile(filename, data, perm)
 		}
 		return errors.Wrapf(err, "error reading information for %s", filename)
 	}
@@ -62,7 +61,7 @@ func WriteFile(filename string, data []byte, perm os.FileMode) error {
 		return ErrFileExists
 	}
 
-	return ioutil.WriteFile(filename, data, perm)
+	return os.WriteFile(filename, data, perm)
 }
 
 // AppendNewLine appends the given data at the end of the file. If the last
@@ -94,7 +93,7 @@ func writeChunk(filename string, data []byte, hasHeaderFooter bool, header, foot
 	}
 
 	// Read file contents
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil && !os.IsNotExist(err) {
 		return FileError(err, filename)
 	}

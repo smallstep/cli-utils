@@ -3,7 +3,6 @@ package step
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -68,7 +67,7 @@ func (c *Context) ProfileDefaultsFile() string {
 func (c *Context) Load() error {
 	c.config = map[string]interface{}{}
 	for _, f := range []string{c.DefaultsFile(), c.ProfileDefaultsFile()} {
-		b, err := ioutil.ReadFile(f)
+		b, err := os.ReadFile(f)
 		if os.IsNotExist(err) {
 			continue
 		} else if err != nil {
@@ -133,7 +132,7 @@ func (cs *CtxState) Init() error {
 
 func (cs *CtxState) initMap() error {
 	contextsFile := ContextsFile()
-	b, err := ioutil.ReadFile(contextsFile)
+	b, err := os.ReadFile(contextsFile)
 	if os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -154,7 +153,7 @@ func (cs *CtxState) initMap() error {
 
 func (cs *CtxState) initCurrent() error {
 	currentCtxFile := CurrentContextFile()
-	b, err := ioutil.ReadFile(currentCtxFile)
+	b, err := os.ReadFile(currentCtxFile)
 	if os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -183,7 +182,7 @@ func (cs *CtxState) LoadVintage(f string) error {
 		f = DefaultsFile()
 	}
 
-	b, err := ioutil.ReadFile(f)
+	b, err := os.ReadFile(f)
 	if os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -290,7 +289,7 @@ func (cs *CtxState) Add(ctx *Context) error {
 	if err := os.MkdirAll(filepath.Dir(cf), 0700); err != nil {
 		return errs.FileError(err, cf)
 	}
-	if err := ioutil.WriteFile(cf, b, 0600); err != nil {
+	if err := os.WriteFile(cf, b, 0600); err != nil {
 		return errs.FileError(err, cf)
 	}
 
@@ -332,7 +331,7 @@ func (cs *CtxState) Remove(name string) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(ContextsFile(), b, 0600); err != nil {
+	if err := os.WriteFile(ContextsFile(), b, 0600); err != nil {
 		return err
 	}
 	return nil
@@ -359,7 +358,7 @@ func (cs *CtxState) SaveCurrent(name string) error {
 	if err != nil {
 		return err
 	}
-	if err = ioutil.WriteFile(CurrentContextFile(), b, 0644); err != nil {
+	if err = os.WriteFile(CurrentContextFile(), b, 0644); err != nil {
 		return errs.FileError(err, CurrentContextFile())
 	}
 	return nil
