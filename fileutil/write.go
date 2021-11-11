@@ -134,9 +134,9 @@ func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
 	return writeChunk(filename, data, false, SnippetHeader, SnippetFooter, perm)
 }
 
-// WriteLine prepends the given line into the given filename and removes
+// PrependLine prepends the given line into the given filename and removes
 // other instances of the line in the file.
-func WriteLine(filename string, data []byte, perm os.FileMode) error {
+func PrependLine(filename string, data []byte, perm os.FileMode) error {
 	// Get file permissions
 	if st, err := os.Stat(filename); err == nil {
 		perm = st.Mode()
