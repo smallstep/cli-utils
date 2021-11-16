@@ -246,14 +246,17 @@ func (cs *CtxState) PromptContext() error {
 		}
 		ctxStr = items[0].Name
 	} else {
-		i, _, err := ui.Select("Select a context for this command:\t(run 'step context select <name>' to set a default context)", items,
+		i, _, err := ui.Select("Select a context for 'step':", items,
 			ui.WithSelectTemplates(ui.NamedSelectTemplates("Context")))
 		if err != nil {
 			return err
 		}
 		ctxStr = items[i].Name
 	}
-	return cs.SetCurrent(ctxStr)
+	if err := cs.SetCurrent(ctxStr); err != nil {
+		return err
+	}
+	return cs.SaveCurrent(ctxStr)
 }
 
 // Enabled returns true if one of the following is true:
