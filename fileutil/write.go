@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -37,13 +36,13 @@ var (
 // file if exists will be overwritten.
 func WriteFile(filename string, data []byte, perm os.FileMode) error {
 	if command.IsForce() {
-		return ioutil.WriteFile(filename, data, perm)
+		return os.WriteFile(filename, data, perm)
 	}
 
 	st, err := os.Stat(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return ioutil.WriteFile(filename, data, perm)
+			return os.WriteFile(filename, data, perm)
 		}
 		return errors.Wrapf(err, "error reading information for %s", filename)
 	}
@@ -62,7 +61,7 @@ func WriteFile(filename string, data []byte, perm os.FileMode) error {
 		return ErrFileExists
 	}
 
-	return ioutil.WriteFile(filename, data, perm)
+	return os.WriteFile(filename, data, perm)
 }
 
 // AppendNewLine appends the given data at the end of the file. If the last
@@ -85,9 +84,7 @@ func AppendNewLine(filename string, data []byte, perm os.FileMode) error {
 	return f.Close()
 }
 
-// WriteSnippet writes the given data on the given filename. It surrounds the
-// data with a header and footer, and it will replace the previous one.
-func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
+func writeChunk(filename string, data []byte, hasHeaderFooter bool, header, footer string, perm os.FileMode) error {
 	// Get file permissions
 	if st, err := os.Stat(filename); err == nil {
 		perm = st.Mode()
@@ -96,13 +93,13 @@ func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
 	}
 
 	// Read file contents
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil && !os.IsNotExist(err) {
 		return FileError(err, filename)
 	}
 
 	// Detect previous configuration
-	_, start, end := findConfiguration(bytes.NewReader(b))
+	_, start, end := findConfiguration(bytes.NewReader(b), header, footer)
 
 	// Replace previous configuration
 	f, err := OpenFile(filename, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, perm)
@@ -115,16 +112,91 @@ func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
 			f.WriteString("\n")
 		}
 	}
-	f.WriteString(fmt.Sprintf("%s @ %s\n", SnippetHeader, time.Now().UTC().Format(time.RFC3339)))
+	if !hasHeaderFooter {
+		f.WriteString(fmt.Sprintf("%s @ %s\n", header, time.Now().UTC().Format(time.RFC3339)))
+	}
 	f.Write(data)
 	if !bytes.HasSuffix(data, []byte("\n")) {
 		f.WriteString("\n")
 	}
-	f.WriteString(SnippetFooter + "\n")
+	if !hasHeaderFooter {
+		f.WriteString(footer + "\n")
+	}
 	if len(b) > 0 {
 		f.Write(b[end:])
 	}
 	return f.Close()
+}
+
+// WriteSnippet writes the given data into the given filename. It surrounds the
+// data with a default header and footer, and it will replace the previous one.
+func WriteSnippet(filename string, data []byte, perm os.FileMode) error {
+	return writeChunk(filename, data, false, SnippetHeader, SnippetFooter, perm)
+}
+
+// PrependLine prepends the given line into the given filename and removes
+// other instances of the line in the file.
+func PrependLine(filename string, data []byte, perm os.FileMode) error {
+	// Get file permissions
+	if st, err := os.Stat(filename); err == nil {
+		perm = st.Mode()
+	} else if !os.IsNotExist(err) {
+		return FileError(err, filename)
+	}
+
+	// Read file contents
+	b, err := os.ReadFile(filename)
+	if err != nil && !os.IsNotExist(err) {
+		return FileError(err, filename)
+	}
+
+	line := string(data)
+	result := []string{string(data)}
+	for _, l := range strings.Split(string(b), "\n") {
+		if l != "" && !strings.HasPrefix(l, line) {
+			result = append(result, l)
+		}
+	}
+
+	if err := os.WriteFile(filename, []byte(strings.Join(result, "\n")), perm); err != nil {
+		return FileError(err, filename)
+	}
+	return nil
+}
+
+// RemoveLine removes a single line which contains the given substring from the
+// given file.
+func RemoveLine(filename, substr string) error {
+	var perm os.FileMode
+	// Get file permissions
+	st, err := os.Stat(filename)
+	switch {
+	case os.IsNotExist(err):
+		return nil
+	case err != nil:
+		return FileError(err, filename)
+	default:
+		perm = st.Mode()
+	}
+
+	// Read file contents
+	b, err := os.ReadFile(filename)
+	if err != nil && !os.IsNotExist(err) {
+		return FileError(err, filename)
+	}
+
+	old := strings.Split(string(b), "\n")
+	for i, l := range old {
+		if !strings.Contains(l, substr) {
+			continue
+		}
+		if err := os.WriteFile(filename, []byte(strings.Join(append(old[:i], old[i+1:]...), "\n")), perm); err != nil {
+			return FileError(err, filename)
+		}
+		break
+	}
+
+	return nil
 }
 
 type offsetCounter struct {
@@ -137,7 +209,7 @@ func (o *offsetCounter) ScanLines(data []byte, atEOF bool) (advance int, token [
 	return
 }
 
-func findConfiguration(r io.Reader) (lines []string, start int64, end int64) {
+func findConfiguration(r io.Reader, header, footer string) (lines []string, start, end int64) {
 	var inConfig bool
 	counter := new(offsetCounter)
 	scanner := bufio.NewScanner(r)
@@ -145,10 +217,10 @@ func findConfiguration(r io.Reader) (lines []string, start int64, end int64) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		switch {
-		case !inConfig && strings.HasPrefix(line, SnippetHeader):
+		case !inConfig && strings.HasPrefix(line, header):
 			inConfig = true
 			start = counter.offset - int64(len(line)+1)
-		case inConfig && strings.HasPrefix(line, SnippetFooter):
+		case inConfig && strings.HasPrefix(line, footer):
 			return lines, start, counter.offset
 		case inConfig:
 			lines = append(lines, line)

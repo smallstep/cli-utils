@@ -3,7 +3,9 @@ Q=$(if $V,,@)
 
 all: lint test
 
-.PHONY: all
+ci: test
+
+.PHONY: all ci
 
 #########################################
 # Bootstrapping

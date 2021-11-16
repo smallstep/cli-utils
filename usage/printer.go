@@ -44,7 +44,7 @@ func htmlHelpPrinter(w io.Writer, templ string, data interface{}) []byte {
 	return html
 }
 
-func markdownHelpPrinter(w io.Writer, templ string, parent string, data interface{}) {
+func markdownHelpPrinter(w io.Writer, templ, parent string, data interface{}) {
 	b := helpPreprocessor(w, templ, data, true)
 
 	frontmatter := frontmatterData{
@@ -111,7 +111,7 @@ func helpPreprocessor(w io.Writer, templ string, data interface{}, applyRx bool)
 				s = s[:newLoc] + options + s[newLoc:]
 			} else {
 				// Keep it at the end I guess :/.
-				s = s + options
+				s += options
 			}
 		}
 	}
@@ -216,13 +216,11 @@ func markdownify(r *bytes.Buffer) string {
 			if last == escapeByte {
 				w.WriteByte(escapeByte)
 				b = 0
-			} else {
-				if n, _, err := r.ReadRune(); err == nil {
-					if unicode.IsSpace(n) {
-						w.WriteByte(escapeByte)
-					}
-					r.UnreadRune()
+			} else if n, _, err := r.ReadRune(); err == nil {
+				if unicode.IsSpace(n) {
+					w.WriteByte(escapeByte)
 				}
+				r.UnreadRune()
 			}
 		case 0: // probably because io.EOF
 		default:
