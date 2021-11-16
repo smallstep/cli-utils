@@ -107,6 +107,11 @@ func ProfilePath() string {
 	return filepath.Join(BasePath(), "profiles", c.Profile)
 }
 
+// IdentityPath returns the location of the identity directory.
+func IdentityPath() string {
+	return filepath.Join(Path(), "identity")
+}
+
 // IdentityFile returns the location of the identity file.
 func IdentityFile() string {
 	return filepath.Join(Path(), "config", "identity.json")
@@ -122,6 +127,16 @@ func DefaultsFile() string {
 // of the profile path.
 func ProfileDefaultsFile() string {
 	return filepath.Join(ProfilePath(), "config", "defaults.json")
+}
+
+// ConfigPath returns the location of the $(step path)/config directory.
+func ConfigPath() string {
+	return filepath.Join(Path(), "config")
+}
+
+// ProfileConfigPath returns the location of the $(step path --profile)/config directory.
+func ProfileConfigPath() string {
+	return filepath.Join(ProfilePath(), "config")
 }
 
 // CaConfigFile returns the location of the ca.json file -- configuration for
