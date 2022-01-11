@@ -42,7 +42,7 @@ func IPAddress() promptui.ValidateFunc {
 }
 
 // DNS is a validation function that checks that the prompted string is a valid
-// DNS name.
+// DNS name or IP address.
 func DNS() promptui.ValidateFunc {
 	return func(s string) error {
 		if strings.TrimSpace(s) == "" {
@@ -52,7 +52,7 @@ func DNS() promptui.ValidateFunc {
 			return nil
 		}
 		if _, _, err := net.SplitHostPort(s + ":443"); err != nil {
-			return fmt.Errorf("%s is not a valid DNS name", s)
+			return fmt.Errorf("%s is not a valid DNS name or IP address", s)
 		}
 		return nil
 	}

@@ -85,7 +85,7 @@ func TestDNS(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotErr := DNS()(tt.input) != nil
 			if gotErr != tt.wantErr {
-				t.Errorf("DNS()(s) = %v, want %v", gotErr, tt.wantErr)
+				t.Errorf("DNS()(%s) = %v, want %v", tt.input, gotErr, tt.wantErr)
 			}
 		})
 	}
