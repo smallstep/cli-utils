@@ -278,6 +278,13 @@ func TestMinSizeInsecureFlag(t *testing.T) {
 	assert.EqualError(t, MinSizeInsecureFlag(ctx, "f1", "10"), exp)
 }
 
+func TestMutuallyExclusiveFlags(t *testing.T) {
+	const exp = `flag '--f1' and flag '--f2' are mutually exclusive`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, MutuallyExclusiveFlags(ctx, "f1", "f2"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error

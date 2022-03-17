@@ -281,7 +281,7 @@ func MinSizeInsecureFlag(ctx *cli.Context, flag, size string) error {
 // MutuallyExclusiveFlags returns an error with mutually exclusive message for
 // the given flags.
 func MutuallyExclusiveFlags(ctx *cli.Context, flag1, flag2 string) error {
-	return errors.Errorf("flag '--%s' and flag '--%s' are mutually exclusive", flag1, flag2)
+	return fmt.Errorf("flag '--%s' and flag '--%s' are mutually exclusive", flag1, flag2)
 }
 
 // UnsupportedFlag returns an error with a message saying that the given flag is
