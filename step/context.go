@@ -29,7 +29,7 @@ type Context struct {
 
 // Validate validates a context and returns an error if invalid.
 func (c *Context) Validate() error {
-	suffix := "; check your $STEPPATH/contexts.json file"
+	const suffix = "; check your $STEPPATH/contexts.json file"
 	if c == nil {
 		return errors.Errorf("context cannot be nil%s", suffix)
 	}
