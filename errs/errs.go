@@ -5,7 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pkg/errors"
+	"errors"
+
+	pkge "github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -24,19 +26,21 @@ func NewExitError(err error, exitCode int) error {
 // If the given error implements the errors.Cause interface, the base error is
 // used. If the given error is wrapped by a package name, the error wrapped
 // will be the string after the last colon.
+//
+// TODO: this should be refactored to use Go's wrap facilities.
 func Wrap(err error, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
 	}
-	cause := errors.Cause(err)
+	cause := pkge.Cause(err)
 	if cause == err {
 		str := err.Error()
 		if i := strings.LastIndexByte(str, ':'); i >= 0 {
 			str = strings.TrimSpace(str[i:])
-			return errors.Wrapf(errors.New(str), format, args...)
+			return pkge.Wrapf(errors.New(str), format, args...)
 		}
 	}
-	return errors.Wrapf(cause, format, args...)
+	return pkge.Wrapf(cause, format, args...)
 }
 
 // InsecureCommand returns an error with a message saying that the current
@@ -213,7 +217,7 @@ func RequiredWithFlagValue(ctx *cli.Context, flag, value, required string) error
 
 // RequiredWithProvisionerTypeFlag returns an error with the required flag message.
 func RequiredWithProvisionerTypeFlag(ctx *cli.Context, provisionerType, required string) error {
-	return errors.Errorf("provisioner type '%s' requires the '--%s' flag", provisionerType, required)
+	return fmt.Errorf("provisioner type '%s' requires the '--%s' flag", provisionerType, required)
 }
 
 // RequiredInsecureFlag returns an error with the given flag requiring the
@@ -286,7 +290,7 @@ func MutuallyExclusiveFlags(ctx *cli.Context, flag1, flag2 string) error {
 // UnsupportedFlag returns an error with a message saying that the given flag is
 // not yet supported.
 func UnsupportedFlag(ctx *cli.Context, flag string) error {
-	return errors.Errorf("flag '--%s' is not yet supported", flag)
+	return fmt.Errorf("flag '--%s' is not yet supported", flag)
 }
 
 // usage returns the command usage text if set or a default usage string.
@@ -306,11 +310,11 @@ func FileError(err error, filename string) error {
 	}
 	switch e := err.(type) {
 	case *os.PathError:
-		return errors.Errorf("%s %s failed: %v", e.Op, e.Path, e.Err)
+		return fmt.Errorf("%s %s failed: %w", e.Op, e.Path, e.Err)
 	case *os.LinkError:
-		return errors.Errorf("%s %s %s failed: %v", e.Op, e.Old, e.New, e.Err)
+		return fmt.Errorf("%s %s %s failed: %w", e.Op, e.Old, e.New, e.Err)
 	case *os.SyscallError:
-		return errors.Errorf("%s failed: %v", e.Syscall, e.Err)
+		return fmt.Errorf("%s failed: %w", e.Syscall, e.Err)
 	default:
 		return Wrap(err, "unexpected error on %s", filename)
 	}
