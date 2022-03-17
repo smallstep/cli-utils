@@ -208,6 +208,13 @@ func TestRequiredWithFlag(t *testing.T) {
 	assert.EqualError(t, RequiredWithFlag(ctx, "f1", "f2"), exp)
 }
 
+func TestRequiredWithFlagValue(t *testing.T) {
+	const exp = `'--f1 v1' requires the '--f2' flag`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredWithFlagValue(ctx, "f1", "v1", "f2"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
