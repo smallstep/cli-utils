@@ -153,7 +153,7 @@ func InvalidFlagValueMsg(ctx *cli.Context, flag, value, msg string) error {
 // IncompatibleFlag returns an error with the flag being incompatible with the
 // given value.
 func IncompatibleFlag(ctx *cli.Context, flag, value string) error {
-	return errors.Errorf("flag '--%s' is incompatible with '%s'", flag, value)
+	return fmt.Errorf("flag '--%s' is incompatible with '%s'", flag, value)
 }
 
 // IncompatibleFlagWithFlag returns an error with the flag being incompatible with the
