@@ -229,6 +229,27 @@ func TestRequiredInsecureFlag(t *testing.T) {
 	assert.EqualError(t, RequiredInsecureFlag(ctx, "f1"), exp)
 }
 
+func TestRequiredSubtleFlag(t *testing.T) {
+	const exp = `flag '--f1' requires the '--subtle' flag`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredSubtleFlag(ctx, "f1"), exp)
+}
+
+func TestRequiredUnlessInsecureFlag(t *testing.T) {
+	const exp = `flag '--f1' is required unless the '--insecure' flag is provided`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredUnlessInsecureFlag(ctx, "f1"), exp)
+}
+
+func TestRequiredUnlessSubtleFlag(t *testing.T) {
+	const exp = `flag '--f1' is required unless the '--subtle' flag is provided`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredUnlessSubtleFlag(ctx, "f1"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
