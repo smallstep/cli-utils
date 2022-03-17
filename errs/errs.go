@@ -166,7 +166,7 @@ func IncompatibleFlagWithFlag(ctx *cli.Context, flag, withFlag string) error {
 // given value.
 func IncompatibleFlagValue(ctx *cli.Context, flag, incompatibleWith,
 	incompatibleWithValue string) error {
-	return errors.Errorf("flag '--%s' is incompatible with flag '--%s %s'",
+	return fmt.Errorf("flag '--%s' is incompatible with flag '--%s %s'",
 		flag, incompatibleWith, incompatibleWithValue)
 }
 
