@@ -105,6 +105,13 @@ func TestMinMaxNumberOfArguments(t *testing.T) {
 	}
 }
 
+func TestInsecureArgument(t *testing.T) {
+	const exp = `positional argument <arg> requires the '--insecure' flag`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, InsecureArgument(ctx, "arg"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error

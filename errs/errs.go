@@ -112,7 +112,7 @@ func TooManyArguments(ctx *cli.Context) error {
 // InsecureArgument returns an error with the given argument requiring the
 // --insecure flag.
 func InsecureArgument(ctx *cli.Context, name string) error {
-	return errors.Errorf("positional argument <%s> requires the '--insecure' flag", name)
+	return fmt.Errorf("positional argument <%s> requires the '--insecure' flag", name)
 }
 
 // FlagValueInsecure returns an error with the given flag and value requiring
