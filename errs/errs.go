@@ -33,7 +33,7 @@ func Wrap(err error, format string, args ...interface{}) error {
 		str := err.Error()
 		if i := strings.LastIndexByte(str, ':'); i >= 0 {
 			str = strings.TrimSpace(str[i:])
-			return errors.Wrapf(fmt.Errorf(str), format, args...)
+			return errors.Wrapf(errors.New(str), format, args...)
 		}
 	}
 	return errors.Wrapf(cause, format, args...)

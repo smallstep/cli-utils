@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -8,12 +9,14 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
+var errEmptyValue = errors.New("value is empty")
+
 // NotEmpty is a validation function that checks that the prompted string is not
 // empty.
 func NotEmpty() promptui.ValidateFunc {
 	return func(s string) error {
 		if strings.TrimSpace(s) == "" {
-			return fmt.Errorf("value is empty")
+			return errEmptyValue
 		}
 		return nil
 	}
@@ -46,7 +49,7 @@ func IPAddress() promptui.ValidateFunc {
 func DNS() promptui.ValidateFunc {
 	return func(s string) error {
 		if strings.TrimSpace(s) == "" {
-			return fmt.Errorf("value is empty")
+			return errEmptyValue
 		}
 		if ip := net.ParseIP(s); ip != nil {
 			return nil
