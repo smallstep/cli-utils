@@ -265,7 +265,7 @@ func TestRequiredWithOrFlag(t *testing.T) {
 }
 
 func TestMinSizeFlag(t *testing.T) {
-	const exp = `flag '--f1' must be greater or equal than 10`
+	const exp = `flag '--f1' must be greater than or equal to 10`
 
 	ctx := newTestCLI(t)
 	assert.EqualError(t, MinSizeFlag(ctx, "f1", "10"), exp)

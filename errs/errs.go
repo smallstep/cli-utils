@@ -268,8 +268,7 @@ func RequiredWithOrFlag(ctx *cli.Context, withFlag string, flags ...string) erro
 // MinSizeFlag returns an error with a greater or equal message message for
 // the given flag and size.
 func MinSizeFlag(ctx *cli.Context, flag, size string) error {
-	// TODO: "must be greater than or equal to"
-	return fmt.Errorf("flag '--%s' must be greater or equal than %s", flag, size)
+	return fmt.Errorf("flag '--%s' must be greater than or equal to %s", flag, size)
 }
 
 // MinSizeInsecureFlag returns an error with a requiring --insecure flag
