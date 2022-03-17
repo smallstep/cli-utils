@@ -11,7 +11,7 @@ import (
 
 // NewError returns a new Error for the given format and arguments
 func NewError(format string, args ...interface{}) error {
-	return errors.Errorf(format, args...)
+	return fmt.Errorf(format, args...)
 }
 
 // NewExitError returns an error that the urfave/cli package will handle and
