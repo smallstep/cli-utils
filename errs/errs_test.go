@@ -215,6 +215,13 @@ func TestRequiredWithFlagValue(t *testing.T) {
 	assert.EqualError(t, RequiredWithFlagValue(ctx, "f1", "v1", "f2"), exp)
 }
 
+func TestRequiredWithProvisionerTypeFlag(t *testing.T) {
+	const exp = `provisioner type 'p1' requires the '--f1' flag`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredWithProvisionerTypeFlag(ctx, "p1", "f1"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
