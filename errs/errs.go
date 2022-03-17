@@ -191,6 +191,7 @@ func IncompatibleFlagValueWithFlagValue(ctx *cli.Context, flag, value,
 		return errors.New(format)
 	}
 
+	// TODO: check whether double space before options is intended
 	return fmt.Errorf("%s\n\n  Option(s): --%s %s", format, withFlag, options)
 }
 
@@ -202,12 +203,12 @@ func RequiredFlag(ctx *cli.Context, flag string) error {
 
 // RequiredWithFlag returns an error with the required flag message with another flag.
 func RequiredWithFlag(ctx *cli.Context, flag, required string) error {
-	return errors.Errorf("flag '--%s' requires the '--%s' flag", flag, required)
+	return fmt.Errorf("flag '--%s' requires the '--%s' flag", flag, required)
 }
 
 // RequiredWithFlagValue returns an error with the required flag message.
 func RequiredWithFlagValue(ctx *cli.Context, flag, value, required string) error {
-	return errors.Errorf("'--%s %s' requires the '--%s' flag", flag, value, required)
+	return fmt.Errorf("'--%s %s' requires the '--%s' flag", flag, value, required)
 }
 
 // RequiredWithProvisionerTypeFlag returns an error with the required flag message.
