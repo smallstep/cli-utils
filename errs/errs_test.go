@@ -1,13 +1,109 @@
 package errs
 
 import (
+	"errors"
+	"flag"
+	"io"
 	"os"
+	"strconv"
 	"testing"
 
-	"errors"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli"
 )
+
+func TestInsecureCommand(t *testing.T) {
+	const exp = `'app cmd' requires the '--insecure' flag`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, InsecureCommand(ctx), exp)
+}
+
+func TestEqualArguments(t *testing.T) {
+	const exp = `positional arguments <arg1> and <arg2> cannot be equal in 'app cmd [command options]'`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, EqualArguments(ctx, "arg1", "arg2"), exp)
+}
+
+func TestMissingArguments(t *testing.T) {
+	cases := []struct {
+		args []string
+		exp  string
+	}{
+		0: {
+			exp: "missing positional arguments in 'app cmd [command options]'",
+		},
+		1: {
+			args: []string{"arg1"},
+			exp:  "missing positional argument <arg1> in 'app cmd [command options]'",
+		},
+		2: {
+			args: []string{"arg1", "arg2"},
+			exp:  "missing positional arguments <arg1> <arg2> in 'app cmd [command options]'",
+		},
+	}
+
+	for caseIndex, kase := range cases {
+		t.Run(strconv.Itoa(caseIndex), func(t *testing.T) {
+			ctx := newTestCLI(t, "app", "cmd", kase.args...)
+			assert.EqualError(t, MissingArguments(ctx, kase.args...), kase.exp)
+		})
+	}
+}
+
+func TestNumberOfArguments(t *testing.T) {
+	ctx := newTestCLI(t, "app", "cmd", "arg1", "arg2")
+
+	cases := map[int]string{
+		0: "too many positional arguments were provided in 'app cmd [command options]'",
+		1: "too many positional arguments were provided in 'app cmd [command options]'",
+		2: "",
+		3: "not enough positional arguments were provided in 'app cmd [command options]'",
+	}
+
+	for n := range cases {
+		exp := cases[n]
+
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
+			if exp == "" {
+				assert.NoError(t, NumberOfArguments(ctx, n))
+			} else {
+				assert.EqualError(t, NumberOfArguments(ctx, n), exp)
+			}
+		})
+	}
+}
+
+func TestMinMaxNumberOfArguments(t *testing.T) {
+	ctx := newTestCLI(t, "app", "cmd", "arg1", "arg2")
+
+	cases := []struct {
+		min int
+		max int
+		exp string
+	}{
+
+		0: {0, 1, "too many positional arguments were provided in 'app cmd [command options]'"},
+		1: {1, 3, ""},
+		2: {3, 4, "not enough positional arguments were provided in 'app cmd [command options]'"},
+	}
+
+	for caseIndex := range cases {
+		kase := cases[caseIndex]
+
+		t.Run(strconv.Itoa(caseIndex), func(t *testing.T) {
+			got := MinMaxNumberOfArguments(ctx, kase.min, kase.max)
+
+			if kase.exp == "" {
+				assert.NoError(t, got)
+			} else {
+				assert.EqualError(t, got, kase.exp)
+			}
+		})
+	}
+}
 
 func TestFileError(t *testing.T) {
 	tests := []struct {
@@ -40,4 +136,24 @@ func TestFileError(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), tt.expected)
 	}
+}
+
+func newTestCLI(t *testing.T, appName, cmdName string, args ...string) *cli.Context {
+	t.Helper()
+
+	fs := flag.NewFlagSet(cmdName, flag.ContinueOnError)
+	require.NoError(t, fs.Parse(args))
+
+	app := cli.NewApp()
+	app.Name = appName
+	app.HelpName = appName
+	app.Writer = io.Discard
+	app.ErrWriter = io.Discard
+
+	ctx := cli.NewContext(app, fs, nil)
+	ctx.Command = cli.Command{
+		Name: cmdName,
+	}
+
+	return ctx
 }

@@ -42,13 +42,13 @@ func Wrap(err error, format string, args ...interface{}) error {
 // InsecureCommand returns an error with a message saying that the current
 // command requires the insecure flag.
 func InsecureCommand(ctx *cli.Context) error {
-	return errors.Errorf("'%s %s' requires the '--insecure' flag", ctx.App.Name, ctx.Command.Name)
+	return fmt.Errorf("'%s %s' requires the '--insecure' flag", ctx.App.Name, ctx.Command.Name)
 }
 
 // EqualArguments returns an error saying that the given positional arguments
 // cannot be equal.
 func EqualArguments(ctx *cli.Context, arg1, arg2 string) error {
-	return errors.Errorf("positional arguments <%s> and <%s> cannot be equal in '%s'", arg1, arg2, usage(ctx))
+	return fmt.Errorf("positional arguments <%s> and <%s> cannot be equal in '%s'", arg1, arg2, usage(ctx))
 }
 
 // MissingArguments returns an error with a missing arguments message for the
@@ -56,15 +56,15 @@ func EqualArguments(ctx *cli.Context, arg1, arg2 string) error {
 func MissingArguments(ctx *cli.Context, argNames ...string) error {
 	switch len(argNames) {
 	case 0:
-		return errors.Errorf("missing positional arguments in '%s'", usage(ctx))
+		return fmt.Errorf("missing positional arguments in '%s'", usage(ctx))
 	case 1:
-		return errors.Errorf("missing positional argument <%s> in '%s'", argNames[0], usage(ctx))
+		return fmt.Errorf("missing positional argument <%s> in '%s'", argNames[0], usage(ctx))
 	default:
 		args := make([]string, len(argNames))
 		for i, name := range argNames {
 			args[i] = "<" + name + ">"
 		}
-		return errors.Errorf("missing positional argument %s in '%s'", strings.Join(args, " "), usage(ctx))
+		return fmt.Errorf("missing positional arguments %s in '%s'", strings.Join(args, " "), usage(ctx))
 	}
 }
 
@@ -100,13 +100,13 @@ func MinMaxNumberOfArguments(ctx *cli.Context, min, max int) error {
 
 // TooFewArguments returns an error with a few arguments were provided message.
 func TooFewArguments(ctx *cli.Context) error {
-	return errors.Errorf("not enough positional arguments were provided in '%s'", usage(ctx))
+	return fmt.Errorf("not enough positional arguments were provided in '%s'", usage(ctx))
 }
 
 // TooManyArguments returns an error with a too many arguments were provided
 // message.
 func TooManyArguments(ctx *cli.Context) error {
-	return errors.Errorf("too many positional arguments were provided in '%s'", usage(ctx))
+	return fmt.Errorf("too many positional arguments were provided in '%s'", usage(ctx))
 }
 
 // InsecureArgument returns an error with the given argument requiring the
