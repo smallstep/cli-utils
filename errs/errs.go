@@ -219,7 +219,7 @@ func RequiredWithProvisionerTypeFlag(ctx *cli.Context, provisionerType, required
 // RequiredInsecureFlag returns an error with the given flag requiring the
 // insecure flag message.
 func RequiredInsecureFlag(ctx *cli.Context, flag string) error {
-	return errors.Errorf("flag '--%s' requires the '--insecure' flag", flag)
+	return fmt.Errorf("flag '--%s' requires the '--insecure' flag", flag)
 }
 
 // RequiredSubtleFlag returns an error with the given flag requiring the

@@ -222,6 +222,13 @@ func TestRequiredWithProvisionerTypeFlag(t *testing.T) {
 	assert.EqualError(t, RequiredWithProvisionerTypeFlag(ctx, "p1", "f1"), exp)
 }
 
+func TestRequiredInsecureFlag(t *testing.T) {
+	const exp = `flag '--f1' requires the '--insecure' flag`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredInsecureFlag(ctx, "f1"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
