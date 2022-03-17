@@ -250,6 +250,13 @@ func TestRequiredUnlessSubtleFlag(t *testing.T) {
 	assert.EqualError(t, RequiredUnlessSubtleFlag(ctx, "f1"), exp)
 }
 
+func TestRequiredOrFlag(t *testing.T) {
+	const exp = `one of flag --f1 or --f2 or --f3 is required`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredOrFlag(ctx, "f1", "f2", "f3"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error

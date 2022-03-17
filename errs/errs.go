@@ -252,7 +252,7 @@ func RequiredOrFlag(ctx *cli.Context, flags ...string) error {
 	for i, flag := range flags {
 		params[i] = "--" + flag
 	}
-	return errors.Errorf("one of flag %s is required", strings.Join(params, " or "))
+	return fmt.Errorf("one of flag %s is required", strings.Join(params, " or "))
 }
 
 // RequiredWithOrFlag returns an error with a list of flags at least one of which
