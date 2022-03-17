@@ -119,6 +119,44 @@ func TestFlagValueInsecure(t *testing.T) {
 	assert.EqualError(t, FlagValueInsecure(ctx, "flag1", "value2"), exp)
 }
 
+func TestInvalidFlagValue(t *testing.T) {
+	ctx := newTestCLI(t, "app", "cmd")
+
+	cases := []struct {
+		value   string
+		options string
+		exp     string
+	}{
+
+		0: {
+			exp: `missing value for flag '--myflag'`,
+		},
+		1: {
+			value: "val2",
+			exp:   `invalid value 'val2' for flag '--myflag'`,
+		},
+		2: {
+			options: `'val3'`,
+			exp:     `missing value for flag '--myflag'; options are 'val3'`,
+		},
+		3: {
+			value:   "val2",
+			options: `'val3', 'val4'`,
+			exp:     `invalid value 'val2' for flag '--myflag'; options are 'val3', 'val4'`,
+		},
+	}
+
+	for caseIndex := range cases {
+		kase := cases[caseIndex]
+
+		t.Run(strconv.Itoa(caseIndex), func(t *testing.T) {
+			got := InvalidFlagValue(ctx, "myflag", kase.value, kase.options)
+
+			assert.EqualError(t, got, kase.exp)
+		})
+	}
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error

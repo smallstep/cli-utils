@@ -125,18 +125,11 @@ func FlagValueInsecure(ctx *cli.Context, flag, value string) error {
 // invalid for the given flag. Optionally it lists the given formatted options
 // at the end.
 func InvalidFlagValue(ctx *cli.Context, flag, value, options string) error {
-	var format string
-	if value == "" {
-		format = fmt.Sprintf("missing value for flag '--%s'", flag)
-	} else {
-		format = fmt.Sprintf("invalid value '%s' for flag '--%s'", value, flag)
+	if options != "" {
+		options = fmt.Sprintf("options are %s", options)
 	}
 
-	if options == "" {
-		return errors.New(format)
-	}
-
-	return errors.New(format + "; options are " + options)
+	return InvalidFlagValueMsg(ctx, flag, value, options)
 }
 
 // InvalidFlagValueMsg returns an error with the given value being missing or
