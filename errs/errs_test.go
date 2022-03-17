@@ -19,6 +19,15 @@ func TestNewError(t *testing.T) {
 	assert.True(t, errors.Is(err, io.EOF))
 }
 
+func TestNewExitError(t *testing.T) {
+	err := NewExitError(assert.AnError, 12)
+	assert.EqualError(t, err, assert.AnError.Error())
+
+	var ee *cli.ExitError
+	require.True(t, errors.As(err, &ee))
+	assert.Equal(t, 12, ee.ExitCode())
+}
+
 func TestInsecureCommand(t *testing.T) {
 	const exp = `'app cmd' requires the '--insecure' flag`
 
