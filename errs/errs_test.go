@@ -112,6 +112,13 @@ func TestInsecureArgument(t *testing.T) {
 	assert.EqualError(t, InsecureArgument(ctx, "arg"), exp)
 }
 
+func TestFlagValueInsecure(t *testing.T) {
+	const exp = `flag '--flag1 value2' requires the '--insecure' flag`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, FlagValueInsecure(ctx, "flag1", "value2"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error

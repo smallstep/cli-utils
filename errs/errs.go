@@ -118,7 +118,7 @@ func InsecureArgument(ctx *cli.Context, name string) error {
 // FlagValueInsecure returns an error with the given flag and value requiring
 // the --insecure flag.
 func FlagValueInsecure(ctx *cli.Context, flag, value string) error {
-	return errors.Errorf("flag '--%s %s' requires the '--insecure' flag", flag, value)
+	return fmt.Errorf("flag '--%s %s' requires the '--insecure' flag", flag, value)
 }
 
 // InvalidFlagValue returns an error with the given value being missing or
