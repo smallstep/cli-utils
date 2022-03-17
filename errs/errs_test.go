@@ -285,6 +285,13 @@ func TestMutuallyExclusiveFlags(t *testing.T) {
 	assert.EqualError(t, MutuallyExclusiveFlags(ctx, "f1", "f2"), exp)
 }
 
+func TestUnsupportedFlag(t *testing.T) {
+	const exp = `flag '--f1' is not yet supported`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, UnsupportedFlag(ctx, "f1"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
