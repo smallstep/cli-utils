@@ -13,6 +13,12 @@ import (
 	"github.com/urfave/cli"
 )
 
+func TestNewError(t *testing.T) {
+	err := NewError("error was: %w", io.EOF)
+	assert.EqualError(t, err, `error was: EOF`)
+	assert.True(t, errors.Is(err, io.EOF))
+}
+
 func TestInsecureCommand(t *testing.T) {
 	const exp = `'app cmd' requires the '--insecure' flag`
 
