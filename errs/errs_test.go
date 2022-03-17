@@ -264,6 +264,20 @@ func TestRequiredWithOrFlag(t *testing.T) {
 	assert.EqualError(t, RequiredWithOrFlag(ctx, "f4", "f1", "f2", "f3"), exp)
 }
 
+func TestMinSizeFlag(t *testing.T) {
+	const exp = `flag '--f1' must be greater or equal than 10`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, MinSizeFlag(ctx, "f1", "10"), exp)
+}
+
+func TestMinSizeInsecureFlag(t *testing.T) {
+	const exp = `flag '--f1' requires at least 10 unless '--insecure' flag is provided`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, MinSizeInsecureFlag(ctx, "f1", "10"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
