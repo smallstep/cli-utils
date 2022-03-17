@@ -164,6 +164,13 @@ func TestIncompatibleFlag(t *testing.T) {
 	assert.EqualError(t, IncompatibleFlag(ctx, "flag1", "--flag2"), exp)
 }
 
+func TestIncompatibleFlagWithFlag(t *testing.T) {
+	const exp = `flag '--flag1' is incompatible with '--flag2'`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, IncompatibleFlagWithFlag(ctx, "flag1", "flag2"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
