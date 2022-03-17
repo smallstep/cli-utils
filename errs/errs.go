@@ -196,7 +196,7 @@ func IncompatibleFlagValueWithFlagValue(ctx *cli.Context, flag, value,
 
 // RequiredFlag returns an error with the required flag message.
 func RequiredFlag(ctx *cli.Context, flag string) error {
-	return errors.Errorf("'%s %s' requires the '--%s' flag", ctx.App.HelpName,
+	return fmt.Errorf("'%s %s' requires the '--%s' flag", ctx.App.HelpName,
 		ctx.Command.Name, flag)
 }
 
