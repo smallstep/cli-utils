@@ -257,6 +257,13 @@ func TestRequiredOrFlag(t *testing.T) {
 	assert.EqualError(t, RequiredOrFlag(ctx, "f1", "f2", "f3"), exp)
 }
 
+func TestRequiredWithOrFlag(t *testing.T) {
+	const exp = `one of flag --f1 or --f2 or --f3 is required with flag --f4`
+
+	ctx := newTestCLI(t, "app", "cmd")
+	assert.EqualError(t, RequiredWithOrFlag(ctx, "f4", "f1", "f2", "f3"), exp)
+}
+
 func TestFileError(t *testing.T) {
 	tests := []struct {
 		err      error
