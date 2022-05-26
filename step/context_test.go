@@ -1,6 +1,7 @@
 package step
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -26,6 +27,46 @@ func TestContextValidate(t *testing.T) {
 				}
 			} else {
 				assert.Nil(t, tc.err)
+			}
+		})
+	}
+}
+
+func TestCtxState_ListAlphabetical(t *testing.T) {
+	aContext := &Context{Name: "A"}
+	bContext := &Context{Name: "B"}
+	cContext := &Context{Name: "C"}
+	type fields struct {
+		contexts ContextMap
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   []*Context
+	}{
+		{
+			name: "ok",
+			fields: fields{
+				contexts: ContextMap{
+					"1": cContext,
+					"2": bContext,
+					"3": aContext,
+				},
+			},
+			want: []*Context{
+				aContext,
+				bContext,
+				cContext,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cs := &CtxState{
+				contexts: tt.fields.contexts,
+			}
+			if got := cs.ListAlphabetical(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CtxState.ListAlphabetical() = %v, want %v", got, tt.want)
 			}
 		})
 	}
