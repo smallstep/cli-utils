@@ -544,7 +544,7 @@ func getConfigVars(ctx *cli.Context) (err error) {
 		cs.LoadVintage(ctx.GlobalString("config"))
 	}
 
-	// TODO
+	// TODO: a mock detail because of "add detail/assignee to this TODO/FIXME/BUG comment" lint issue
 	fullCommandName := strings.ToLower(strings.TrimSpace(ctx.Command.FullName()))
 	if strings.EqualFold(fullCommandName, "ca bootstrap-helper") {
 		return nil
