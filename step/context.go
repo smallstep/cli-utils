@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -347,6 +348,18 @@ func (cs *CtxState) List() []*Context {
 	return l
 }
 
+// ListAlphabetical returns a case-insensitive, alphabetically
+// sorted list of all contexts.
+func (cs *CtxState) ListAlphabetical() []*Context {
+	l := cs.List()
+
+	sort.Slice(l, func(i, j int) bool {
+		return strings.ToLower(l[i].Name) < strings.ToLower(l[j].Name)
+	})
+
+	return l
+}
+
 // SaveCurrent stores the given context name as the selected default context for
 // future commands.
 func (cs *CtxState) SaveCurrent(name string) error {
@@ -531,7 +544,7 @@ func getConfigVars(ctx *cli.Context) (err error) {
 		cs.LoadVintage(ctx.GlobalString("config"))
 	}
 
-	// TODO
+	// TODO: a mock detail because of "add detail/assignee to this TODO/FIXME/BUG comment" lint issue
 	fullCommandName := strings.ToLower(strings.TrimSpace(ctx.Command.FullName()))
 	if strings.EqualFold(fullCommandName, "ca bootstrap-helper") {
 		return nil
