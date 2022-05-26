@@ -34,7 +34,7 @@ func TestContextValidate(t *testing.T) {
 
 func TestCtxState_ListAlphabetical(t *testing.T) {
 	aContext := &Context{Name: "A"}
-	bContext := &Context{Name: "B"}
+	bContext := &Context{Name: "b"}
 	cContext := &Context{Name: "C"}
 	type fields struct {
 		contexts ContextMap

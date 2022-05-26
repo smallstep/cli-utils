@@ -348,13 +348,13 @@ func (cs *CtxState) List() []*Context {
 	return l
 }
 
-// ListAlphabetical returns an alphabetically sorted
-// list of all contexts.
+// ListAlphabetical returns a case-insensitive, alphabetically
+// sorted list of all contexts.
 func (cs *CtxState) ListAlphabetical() []*Context {
 	l := cs.List()
 
 	sort.Slice(l, func(i, j int) bool {
-		return l[i].Name < l[j].Name
+		return strings.ToLower(l[i].Name) < strings.ToLower(l[j].Name)
 	})
 
 	return l
