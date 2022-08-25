@@ -56,20 +56,18 @@ func init() {
 	homePath = filepath.Clean(homePath)
 	stepBasePath = filepath.Clean(stepBasePath)
 
+	// Check for presence or attempt to create it if necessary.
+	//
+	// Some environments (e.g. third party docker images) might fail creating
+	// the directory, so this should not panic if it can't.
+	if fi, err := os.Stat(stepBasePath); err != nil {
+		os.MkdirAll(stepBasePath, 0700)
+	} else if !fi.IsDir() {
+		l.Fatalf("File '%s' is not a directory.", stepBasePath)
+	}
+
 	// Initialize context state.
 	Contexts().Init()
-
-	if Contexts().Enabled() {
-		// Check for presence or attempt to create it if necessary.
-		//
-		// Some environments (e.g. third party docker images) might fail creating
-		// the directory, so this should not panic if it can't.
-		if fi, err := os.Stat(stepBasePath); err != nil {
-			os.MkdirAll(stepBasePath, 0700)
-		} else if !fi.IsDir() {
-			l.Fatalf("File '%s' is not a directory.", stepBasePath)
-		}
-	}
 }
 
 // BasePath returns the base path for the step configuration directory.
@@ -79,11 +77,11 @@ func BasePath() string {
 
 // Path returns the path for the step configuration directory.
 //
-// 1) If the base step path has a current context configured, then this method
-//    returns the path to the authority configured in the context.
-// 2) If the base step path does not have a current context configured this
-//    method returns the value defined by the environment variable STEPPATH, OR
-// 3) If no environment variable is set, this method returns `$HOME/.step`.
+//  1. If the base step path has a current context configured, then this method
+//     returns the path to the authority configured in the context.
+//  2. If the base step path does not have a current context configured this
+//     method returns the value defined by the environment variable STEPPATH, OR
+//  3. If no environment variable is set, this method returns `$HOME/.step`.
 func Path() string {
 	c := Contexts().GetCurrent()
 	if c == nil {
@@ -94,11 +92,11 @@ func Path() string {
 
 // ProfilePath returns the path for the currently selected profile path.
 //
-// 1) If the base step path has a current context configured, then this method
-//    returns the path to the profile configured in the context.
-// 2) If the base step path does not have a current context configured this
-//    method returns the value defined by the environment variable STEPPATH, OR
-// 3) If no environment variable is set, this method returns `$HOME/.step`.
+//  1. If the base step path has a current context configured, then this method
+//     returns the path to the profile configured in the context.
+//  2. If the base step path does not have a current context configured this
+//     method returns the value defined by the environment variable STEPPATH, OR
+//  3. If no environment variable is set, this method returns `$HOME/.step`.
 func ProfilePath() string {
 	c := Contexts().GetCurrent()
 	if c == nil {

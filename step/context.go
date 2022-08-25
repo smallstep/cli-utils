@@ -261,8 +261,8 @@ func (cs *CtxState) PromptContext() error {
 }
 
 // Enabled returns true if one of the following is true:
-//  - there is a current context configured
-//  - the context map is (list of available contexts) is not empty.
+//   - there is a current context configured
+//   - the context map is (list of available contexts) is not empty.
 func (cs *CtxState) Enabled() bool {
 	return cs.current != nil || len(cs.contexts) > 0
 }
