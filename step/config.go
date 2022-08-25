@@ -79,11 +79,11 @@ func BasePath() string {
 
 // Path returns the path for the step configuration directory.
 //
-// 1) If the base step path has a current context configured, then this method
-//    returns the path to the authority configured in the context.
-// 2) If the base step path does not have a current context configured this
-//    method returns the value defined by the environment variable STEPPATH, OR
-// 3) If no environment variable is set, this method returns `$HOME/.step`.
+//  1. If the base step path has a current context configured, then this method
+//     returns the path to the authority configured in the context.
+//  2. If the base step path does not have a current context configured this
+//     method returns the value defined by the environment variable STEPPATH, OR
+//  3. If no environment variable is set, this method returns `$HOME/.step`.
 func Path() string {
 	c := Contexts().GetCurrent()
 	if c == nil {
@@ -94,11 +94,11 @@ func Path() string {
 
 // ProfilePath returns the path for the currently selected profile path.
 //
-// 1) If the base step path has a current context configured, then this method
-//    returns the path to the profile configured in the context.
-// 2) If the base step path does not have a current context configured this
-//    method returns the value defined by the environment variable STEPPATH, OR
-// 3) If no environment variable is set, this method returns `$HOME/.step`.
+//  1. If the base step path has a current context configured, then this method
+//     returns the path to the profile configured in the context.
+//  2. If the base step path does not have a current context configured this
+//     method returns the value defined by the environment variable STEPPATH, OR
+//  3. If no environment variable is set, this method returns `$HOME/.step`.
 func ProfilePath() string {
 	c := Contexts().GetCurrent()
 	if c == nil {
