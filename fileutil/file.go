@@ -103,13 +103,18 @@ func FileError(err error, filename string) error {
 	if err == nil {
 		return nil
 	}
-	switch e := err.(type) {
-	case *os.PathError:
-		return errors.Errorf("%s %s failed: %v", e.Op, e.Path, e.Err)
-	case *os.LinkError:
-		return errors.Errorf("%s %s %s failed: %v", e.Op, e.Old, e.New, e.Err)
-	case *os.SyscallError:
-		return errors.Errorf("%s failed: %v", e.Syscall, e.Err)
+	var (
+		pathErr    *os.PathError
+		linkErr    *os.LinkError
+		syscallErr *os.SyscallError
+	)
+	switch {
+	case errors.As(err, &pathErr):
+		return errors.Errorf("%s %s failed: %v", pathErr.Op, pathErr.Path, pathErr.Err)
+	case errors.As(err, &linkErr):
+		return errors.Errorf("%s %s %s failed: %v", linkErr.Op, linkErr.Old, linkErr.New, linkErr.Err)
+	case errors.As(err, &syscallErr):
+		return errors.Errorf("%s failed: %v", syscallErr.Syscall, syscallErr.Err)
 	default:
 		return errors.Wrapf(err, "unexpected error on %s", filename)
 	}

@@ -33,7 +33,7 @@ func Wrap(err error, format string, args ...interface{}) error {
 		return nil
 	}
 	cause := pkge.Cause(err)
-	if cause == err {
+	if errors.Is(err, cause) {
 		str := err.Error()
 		if i := strings.LastIndexByte(str, ':'); i >= 0 {
 			str = strings.TrimSpace(str[i:])
@@ -178,7 +178,6 @@ func IncompatibleFlagValue(ctx *cli.Context, flag, incompatibleWith,
 // given value.
 func IncompatibleFlagValues(ctx *cli.Context, flag, value, incompatibleWith,
 	incompatibleWithValue string) error {
-
 	return IncompatibleFlagValueWithFlagValue(ctx, flag, value, incompatibleWith,
 		incompatibleWithValue, "")
 }
@@ -308,13 +307,18 @@ func FileError(err error, filename string) error {
 	if err == nil {
 		return nil
 	}
-	switch e := err.(type) {
-	case *os.PathError:
-		return fmt.Errorf("%s %s failed: %w", e.Op, e.Path, e.Err)
-	case *os.LinkError:
-		return fmt.Errorf("%s %s %s failed: %w", e.Op, e.Old, e.New, e.Err)
-	case *os.SyscallError:
-		return fmt.Errorf("%s failed: %w", e.Syscall, e.Err)
+	var (
+		pathErr    *os.PathError
+		linkErr    *os.LinkError
+		syscallErr *os.SyscallError
+	)
+	switch {
+	case errors.As(err, &pathErr):
+		return fmt.Errorf("%s %s failed: %w", pathErr.Op, pathErr.Path, pathErr.Err)
+	case errors.As(err, &linkErr):
+		return fmt.Errorf("%s %s %s failed: %w", linkErr.Op, linkErr.Old, linkErr.New, linkErr.Err)
+	case errors.As(err, &syscallErr):
+		return fmt.Errorf("%s failed: %w", syscallErr.Syscall, syscallErr.Err)
 	default:
 		return Wrap(err, "unexpected error on %s", filename)
 	}

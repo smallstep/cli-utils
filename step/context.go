@@ -371,6 +371,7 @@ func (cs *CtxState) SaveCurrent(name string) error {
 	if err != nil {
 		return err
 	}
+	//nolint:gosec // this file does not contain sensitive info
 	if err = os.WriteFile(CurrentContextFile(), b, 0644); err != nil {
 		return errs.FileError(err, CurrentContextFile())
 	}
