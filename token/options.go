@@ -98,8 +98,8 @@ func WithValidity(notBefore, expiration time.Time) Options {
 			if !notBefore.IsZero() {
 				if expiration.Before(notBefore) {
 					return errors.Errorf("nbf < exp: nbf=%v, exp=%v", notBefore, expiration)
-
 				}
+
 				requestedValidity := expiration.Sub(notBefore)
 				if requestedValidity < MinValidity {
 					return errors.Errorf("requested token validity is too short: 'requested token validity'=%v, 'minimum token validity'=%v", requestedValidity, MinValidity)
