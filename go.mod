@@ -3,7 +3,7 @@ module go.step.sm/cli-utils
 go 1.18
 
 require (
-	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
+	github.com/chzyer/readline v1.5.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/pkg/errors v0.9.1
