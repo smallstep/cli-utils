@@ -11,7 +11,7 @@ require (
 	github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli v1.22.12
-	go.step.sm/crypto v0.25.2
+	go.step.sm/crypto v0.26.0
 	golang.org/x/net v0.8.0
 	golang.org/x/sys v0.6.0
 )
