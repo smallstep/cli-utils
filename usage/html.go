@@ -95,6 +95,40 @@ func markdownHelpCommand(app *cli.App, cmd, parent cli.Command, base string) err
 	return nil
 }
 
+func manifestHelpAction(ctx *cli.Context) error {
+	first := true
+	for _, cmd := range ctx.App.Commands {
+		cmd.HelpName = cmd.Name
+		manifestHelpCommand(first, cmd)
+		first = false
+	}
+	return nil
+}
+
+func manifestHelpCommand(first bool, cmd cli.Command) error {
+	cmdReferencePath := strings.ReplaceAll(cmd.HelpName, " ", "/")
+	if first {
+		fmt.Print(`,`)
+	}
+	fmt.Print(`,
+{
+	"hideFromSideBar": true,
+	"title": Reference - "` + cmd.HelpName + `",
+	"path": "/step-cli/reference/` + cmdReferencePath + `/README.mdx"
+}`)
+	if len(cmd.Subcommands) == 0 {
+		return nil
+	}
+
+	for _, sub := range cmd.Subcommands {
+		sub.HelpName = fmt.Sprintf("%s %s", cmd.HelpName, sub.Name)
+		if err := manifestHelpCommand(false, sub); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func htmlHelpAction(ctx *cli.Context) error {
 	dir := path.Clean(ctx.String("html"))
 

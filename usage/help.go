@@ -47,6 +47,10 @@ $ step help ssh
 				Name:  "html",
 				Usage: "The export <directory> for HTML docs.",
 			},
+			cli.BoolFlag{
+				Name:  "manifest",
+				Usage: "Print markdown command tree manifest for website reference docs.",
+			},
 			cli.StringFlag{
 				Name:  "markdown",
 				Usage: "The export <directory> for Markdown docs.",
@@ -69,8 +73,12 @@ func helpAction(ctx *cli.Context) error {
 		return htmlHelpAction(ctx)
 	}
 
-	if ctx.IsSet("markdown") {
+	if ctx.IsSet("markdown") && ctx.Bool("mardown") {
 		return markdownHelpAction(ctx)
+	}
+
+	if ctx.IsSet("manifest") {
+		return manifestHelpAction(ctx)
 	}
 
 	args := ctx.Args()
