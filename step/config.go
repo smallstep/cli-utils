@@ -2,12 +2,12 @@ package step
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -24,55 +24,65 @@ var (
 	name      = "Smallstep CLI"
 	buildTime = "N/A"
 	version   = "N/A"
-
-	// stepBasePath will be populated in init() with the proper STEPPATH.
-	stepBasePath string
-
-	// homePath will be populated in init() with the proper HOME.
-	homePath string
 )
 
-func init() {
-	l := log.New(os.Stderr, "", 0)
+var cache struct {
+	sync.Once
+	err          error
+	stepBasePath string // stepBasePath will be populated in init() with the proper STEPPATH.
+	homePath     string // homePath will be populated in init() with the proper HOME.
+}
 
-	// Get home path from environment or from the user object.
-	homePath = os.Getenv(HomeEnv)
-	if homePath == "" {
-		usr, err := user.Current()
-		if err == nil && usr.HomeDir != "" {
-			homePath = usr.HomeDir
-		} else {
-			l.Fatalf("Error obtaining home directory, please define environment variable %s.", HomeEnv)
+// Init initializes the step environment.
+//
+// A program calling this function should fail because the step variables would
+// be undefined.
+func Init() error {
+	if err := initStepPath(); err != nil {
+		return err
+	}
+	return Contexts().Init()
+}
+
+func initStepPath() error {
+	cache.Do(func() {
+		// Get home path from environment or from the user object.
+		homePath := os.Getenv(HomeEnv)
+		if homePath == "" {
+			usr, err := user.Current()
+			if err == nil && usr.HomeDir != "" {
+				homePath = usr.HomeDir
+			} else {
+				cache.err = fmt.Errorf("error obtaining home directory, please define environment variable %s", HomeEnv)
+				return
+			}
 		}
-	}
 
-	// Get step path from environment or relative to home.
-	stepBasePath = os.Getenv(PathEnv)
-	if stepBasePath == "" {
-		stepBasePath = filepath.Join(homePath, ".step")
-	}
+		// Get step path from environment or relative to home.
+		stepBasePath := os.Getenv(PathEnv)
+		if stepBasePath == "" {
+			stepBasePath = filepath.Join(homePath, ".step")
+		}
 
-	// cleanup
-	homePath = filepath.Clean(homePath)
-	stepBasePath = filepath.Clean(stepBasePath)
+		// cleanup and add paths to cache
+		cache.homePath = filepath.Clean(homePath)
+		cache.stepBasePath = filepath.Clean(stepBasePath)
+	})
 
-	// Check for presence or attempt to create it if necessary.
-	//
-	// Some environments (e.g. third party docker images) might fail creating
-	// the directory, so this should not panic if it can't.
-	if fi, err := os.Stat(stepBasePath); err != nil {
-		os.MkdirAll(stepBasePath, 0700)
-	} else if !fi.IsDir() {
-		l.Fatalf("File '%s' is not a directory.", stepBasePath)
-	}
+	return cache.err
+}
 
-	// Initialize context state.
-	Contexts().Init()
+// Home returns the user home directory using the environment variable HOME or
+// the os/user package.
+func Home() string {
+	_ = initStepPath()
+	return cache.homePath
 }
 
 // BasePath returns the base path for the step configuration directory.
 func BasePath() string {
-	return stepBasePath
+	_ = initStepPath()
+	return cache.stepBasePath
 }
 
 // Path returns the path for the step configuration directory.
@@ -153,12 +163,6 @@ func CurrentContextFile() string {
 	return filepath.Join(BasePath(), "current-context.json")
 }
 
-// Home returns the user home directory using the environment variable HOME or
-// the os/user package.
-func Home() string {
-	return homePath
-}
-
 // Abs returns the given path relative to the STEPPATH if it's not an
 // absolute path, relative to the home directory using the special string "~/",
 // or relative to the working directory using "./"
@@ -176,7 +180,7 @@ func Abs(path string) string {
 	slashed := filepath.ToSlash(path)
 	switch {
 	case strings.HasPrefix(slashed, "~/"):
-		return filepath.Join(homePath, path[2:])
+		return filepath.Join(Home(), path[2:])
 	case strings.HasPrefix(slashed, "./"), strings.HasPrefix(slashed, "../"):
 		if abs, err := filepath.Abs(path); err == nil {
 			return abs
