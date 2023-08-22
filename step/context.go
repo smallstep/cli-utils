@@ -125,10 +125,7 @@ func (cs *CtxState) Init() error {
 	if err := cs.initCurrent(); err != nil {
 		return err
 	}
-	if err := cs.load(); err != nil {
-		return err
-	}
-	return nil
+	return cs.load()
 }
 
 func (cs *CtxState) initMap() error {
@@ -333,7 +330,7 @@ func (cs *CtxState) Remove(name string) error {
 	}
 
 	if err := os.WriteFile(ContextsFile(), b, 0600); err != nil {
-		return err
+		return fmt.Errorf("error writing file: %w", err)
 	}
 	return nil
 }
@@ -552,7 +549,7 @@ func getConfigVars(ctx *cli.Context) (err error) {
 	}
 
 	if err := cs.Apply(ctx); err != nil {
-		return err
+		return fmt.Errorf("error applying contexts: %w", err)
 	}
 
 	return nil
