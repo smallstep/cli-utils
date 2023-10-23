@@ -50,8 +50,8 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/urfave/cli v1.22.14 h1:ebbhrRiGK2i4naQJr+1Xj92HXZCrK7MsyTS/ob3HnAk=
 github.com/urfave/cli v1.22.14/go.mod h1:X0eDS6pD6Exaclxm99NJ3FiCDRED7vIHpx2mDOHLvkA=
-go.step.sm/crypto v0.36.0 h1:njrVQqjWVyCzHxqQUDprR7HXypZX8IxtOqe4IIHSjgU=
-go.step.sm/crypto v0.36.0/go.mod h1:XMRbgkhoigPLaPMjZeY1VFIYXVw03Wul0+5lENF6l7c=
+go.step.sm/crypto v0.36.1 h1:hrHIc0qVcOowJB/r1SgPGu10d59onUw3czYeMLJluBc=
+go.step.sm/crypto v0.36.1/go.mod h1:3b2wJhYMWzHpc8ke4CvTXOehx/FK5acd8rwXt+c8g68=
 golang.org/x/crypto v0.14.0 h1:wBqGXzWJW6m1XrIKlAH0Hs1JJ7+9KBwnIO8v66Q9cHc=
 golang.org/x/crypto v0.14.0/go.mod h1:MVFd36DqK4CsrnJYDkBA3VC4m2GkXAM0PvzMCn4JQf4=
 golang.org/x/net v0.17.0 h1:pVaXccu2ozPjCXewfr1S7xza/zcXTity9cCdXQYSjIM=
