@@ -11,7 +11,7 @@ require (
 	github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli v1.22.14
-	go.step.sm/crypto v0.36.1
+	go.step.sm/crypto v0.37.0
 	golang.org/x/net v0.18.0
 	golang.org/x/sys v0.14.0
 )
@@ -20,6 +20,7 @@ require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.11 // indirect
