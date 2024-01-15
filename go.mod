@@ -11,8 +11,8 @@ require (
 	github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli v1.22.14
-	go.step.sm/crypto v0.40.0
-	golang.org/x/net v0.19.0
+	go.step.sm/crypto v0.41.0
+	golang.org/x/net v0.20.0
 	golang.org/x/sys v0.16.0
 )
 
@@ -28,7 +28,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
