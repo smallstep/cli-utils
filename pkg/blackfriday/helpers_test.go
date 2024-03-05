@@ -11,6 +11,7 @@
 // Helper functions for unit testing
 //
 
+//nolint:all
 package blackfriday
 
 import (
