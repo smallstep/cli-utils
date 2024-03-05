@@ -168,9 +168,17 @@ func (cs *CtxState) initCurrent() error {
 
 func (cs *CtxState) load() error {
 	if cs.Enabled() && cs.GetCurrent() != nil {
-		return cs.GetCurrent().Load()
+		if err := cs.GetCurrent().Load(); err != nil {
+			return fmt.Errorf("failed loading current context configuration: %w", err)
+		}
+
+		return nil
 	}
-	cs.LoadVintage("")
+
+	if err := cs.LoadVintage(""); err != nil {
+		return fmt.Errorf("failed loading context configuration: %w", err)
+	}
+
 	return nil
 }
 
