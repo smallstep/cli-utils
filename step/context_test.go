@@ -85,7 +85,7 @@ type config struct {
 
 func TestCtxState_load(t *testing.T) {
 	contextsDir := t.TempDir()
-	os.Setenv(HomeEnv, contextsDir)
+	t.Setenv(HomeEnv, contextsDir)
 
 	ctx1ConfigDirectory := filepath.Join(contextsDir, ".step", "authorities", "ctx1", "config")
 	err := os.MkdirAll(ctx1ConfigDirectory, 0o777)
