@@ -11,6 +11,7 @@
 // Unit tests for full document parsing and rendering
 //
 
+//nolint:all
 package blackfriday
 
 import "testing"

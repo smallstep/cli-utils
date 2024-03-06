@@ -11,6 +11,7 @@
 // Unit tests for block parsing
 //
 
+//nolint:all
 package blackfriday
 
 import (

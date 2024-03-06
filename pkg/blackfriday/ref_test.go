@@ -11,6 +11,7 @@
 // Markdown 1.0.3 reference tests
 //
 
+//nolint:all
 package blackfriday
 
 import (
