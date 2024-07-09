@@ -112,9 +112,9 @@ func (report *Report) processNode(node *html.Node) (string, *html.Node) {
 		notags := r.ReplaceAllString(buf.String(), "")
 		clean := strings.TrimSpace(notags)
 
-		if len(text) > 0 && len(clean) > 0 {
+		if text != "" && clean != "" {
 			text = fmt.Sprintf("%s %s", text, clean)
-		} else if len(clean) > 0 {
+		} else if clean != "" {
 			text = clean
 		}
 
