@@ -1,6 +1,6 @@
 module go.step.sm/cli-utils
 
-go 1.20
+go 1.21
 
 require (
 	github.com/chzyer/readline v1.5.1
