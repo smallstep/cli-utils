@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/mgutz/ansi"
+
 	md "go.step.sm/cli-utils/pkg/blackfriday"
 )
 
@@ -191,36 +192,36 @@ func (r *Renderer) RenderNode(w io.Writer, node *md.Node, entering bool) md.Walk
 			r.write(node.Literal)
 		} else {
 			s := strings.ReplaceAll(string(node.Literal), "\n", "\n"+strings.Repeat(" ", r.depth))
-			r.printf(s)
+			r.printf(s) //nolint:govet // allow non-constant
 		}
 	case md.Heading:
 		if entering {
-			r.printf(ansi.ColorCode("default+bh"))
+			r.printf(ansi.ColorCode("default+bh")) //nolint:govet // allow non-constant
 		} else {
 			r.printf(ansi.Reset)
 			r.printf("\n")
 		}
 	case md.Link:
 		if entering {
-			r.printf(ansi.ColorCode("default+b"))
+			r.printf(ansi.ColorCode("default+b")) //nolint:govet // allow non-constant
 			//r.printf("\033[2m") // Dim
 		} else {
 			r.printf(ansi.Reset)
 		}
 	case md.Strong:
 		if entering {
-			r.printf(ansi.ColorCode("default+bh"))
+			r.printf(ansi.ColorCode("default+bh")) //nolint:govet // allow non-constant
 		} else {
 			r.printf(ansi.Reset)
 		}
 	case md.Emph:
 		if entering {
-			r.printf(ansi.ColorCode("default+u"))
+			r.printf(ansi.ColorCode("default+u")) //nolint:govet // allow non-constant
 		} else {
 			r.printf(ansi.Reset)
 		}
 	case md.Code:
-		r.printf(ansi.ColorCode("default+u"))
+		r.printf(ansi.ColorCode("default+u")) //nolint:govet // allow non-constant
 		r.write(node.Literal)
 		r.printf(ansi.Reset)
 	case md.List:
@@ -331,7 +332,7 @@ func (r *Renderer) RenderNode(w io.Writer, node *md.Node, entering bool) md.Walk
 				for i := 0; i < len(parts); i++ {
 					parts[i] = "\xff" + ansi.ColorCode("default+bh") + "\xff" + parts[i] + "\xff" + ansi.Reset + "\xff"
 				}
-				r.printf(strings.Join(parts, "\t") + "\t\n")
+				r.printf(strings.Join(parts, "\t") + "\t\n") //nolint:govet // allow non-constant
 			}
 		}
 	case md.TableRow:

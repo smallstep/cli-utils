@@ -1,6 +1,6 @@
 module go.step.sm/cli-utils
 
-go 1.21
+go 1.22
 
 require (
 	github.com/chzyer/readline v1.5.1
@@ -11,7 +11,7 @@ require (
 	github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli v1.22.15
-	go.step.sm/crypto v0.51.1
+	go.step.sm/crypto v0.51.2
 	golang.org/x/net v0.28.0
 	golang.org/x/sys v0.24.0
 )
