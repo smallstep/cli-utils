@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
-	
+
 	"github.com/smallstep/cli-utils/step"
 	"github.com/smallstep/cli-utils/usage"
 )

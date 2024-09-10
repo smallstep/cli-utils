@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/urfave/cli"
-	
+
 	"github.com/smallstep/cli-utils/errs"
 )
 

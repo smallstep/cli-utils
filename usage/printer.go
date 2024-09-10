@@ -10,7 +10,7 @@ import (
 	"unicode"
 
 	"github.com/urfave/cli"
-	
+
 	md "github.com/smallstep/cli-utils/pkg/blackfriday"
 )
 

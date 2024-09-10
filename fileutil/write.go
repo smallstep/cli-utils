@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	
+
 	"github.com/smallstep/cli-utils/command"
 	"github.com/smallstep/cli-utils/ui"
 )

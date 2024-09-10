@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/urfave/cli"
-	
+
 	"github.com/smallstep/cli-utils/command"
 	"github.com/smallstep/cli-utils/step"
 )
