@@ -1,10 +1,10 @@
 # cli-utils
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Build Status](https://travis-ci.com/smallstep/crypto.svg?branch=master)](https://travis-ci.com/smallstep/cli-utils)
-[![Documentation](https://godoc.org/go.step.sm/crypto?status.svg)](https://pkg.go.dev/mod/github.com/smallstep/cli-utils)
+[![Build Status](https://travis-ci.com/smallstep/cli-utils.svg?branch=main)](https://travis-ci.com/smallstep/cli-utils)
+[![Documentation](https://godoc.org/github.com/smallstep/cli-utils?status.svg)](https://pkg.go.dev/mod/github.com/smallstep/cli-utils)
 
-Cli-utils is a collection of packages used in [smallstep](https://smallstep.com) products. See:
+Cli-utils is a collection of packages used in [Smallstep](https://smallstep.com) products. See:
 
 * [step](https://github.com/smallstep/cli): A zero trust swiss army knife for
   working with X509, OAuth, JWT, OATH OTP, etc.
