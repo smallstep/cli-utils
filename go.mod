@@ -1,4 +1,4 @@
-module go.step.sm/cli-utils
+module github.com/smallstep/cli-utils
 
 go 1.22
 

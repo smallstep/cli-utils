@@ -4,8 +4,9 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
-	"go.step.sm/cli-utils/step"
-	"go.step.sm/cli-utils/usage"
+
+	"github.com/smallstep/cli-utils/step"
+	"github.com/smallstep/cli-utils/usage"
 )
 
 var cmds []cli.Command
