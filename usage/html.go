@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/urfave/cli"
-	"go.step.sm/cli-utils/errs"
+	
+	"github.com/smallstep/cli-utils/errs"
 )
 
 func httpHelpAction(ctx *cli.Context) error {

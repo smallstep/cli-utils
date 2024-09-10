@@ -12,7 +12,7 @@ import (
 
 	"github.com/mgutz/ansi"
 
-	md "go.step.sm/cli-utils/pkg/blackfriday"
+	md "github.com/smallstep/cli-utils/pkg/blackfriday"
 )
 
 // Render renders the given data with a custom markdown renderer.

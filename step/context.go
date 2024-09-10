@@ -11,8 +11,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"go.step.sm/cli-utils/errs"
-	"go.step.sm/cli-utils/ui"
+	
+	"github.com/smallstep/cli-utils/errs"
+	"github.com/smallstep/cli-utils/ui"
 )
 
 // IgnoreEnvVar is a value added to a flag EnvVar to avoid the use of

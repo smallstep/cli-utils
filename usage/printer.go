@@ -10,7 +10,8 @@ import (
 	"unicode"
 
 	"github.com/urfave/cli"
-	md "go.step.sm/cli-utils/pkg/blackfriday"
+	
+	md "github.com/smallstep/cli-utils/pkg/blackfriday"
 )
 
 var sectionRe = regexp.MustCompile(`(?m:^##)`)

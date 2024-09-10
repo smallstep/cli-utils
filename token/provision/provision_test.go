@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"go.step.sm/cli-utils/token"
+	
 	"go.step.sm/crypto/jose"
 	"go.step.sm/crypto/pemutil"
+
+	"github.com/smallstep/cli-utils/token"
 )
 
 func withFixedTime(tok *Token, t time.Time) {

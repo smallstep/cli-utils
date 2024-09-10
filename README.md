@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build Status](https://travis-ci.com/smallstep/crypto.svg?branch=master)](https://travis-ci.com/smallstep/cli-utils)
-[![Documentation](https://godoc.org/go.step.sm/crypto?status.svg)](https://pkg.go.dev/mod/go.step.sm/cli-utils)
+[![Documentation](https://godoc.org/go.step.sm/crypto?status.svg)](https://pkg.go.dev/mod/github.com/smallstep/cli-utils)
 
 Cli-utils is a collection of packages used in [smallstep](https://smallstep.com) products. See:
 
@@ -19,5 +19,5 @@ Cli-utils is a collection of packages used in [smallstep](https://smallstep.com)
 To add this to a project just run:
 
 ```sh
-go get go.step.sm/cli-utils
+go get github.com/smallstep/cli-utils
 ```

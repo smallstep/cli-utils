@@ -1,8 +1,9 @@
 package provision
 
 import (
-	"go.step.sm/cli-utils/token"
 	"go.step.sm/crypto/jose"
+
+	"github.com/smallstep/cli-utils/token"
 )
 
 // Token defines a one time use token that is intended to be exchanged
