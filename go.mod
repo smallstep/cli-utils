@@ -1,7 +1,6 @@
 module github.com/smallstep/cli-utils
 
-go 1.22
-toolchain go1.23.6
+go 1.23.6
 
 require (
 	github.com/chzyer/readline v1.5.1
