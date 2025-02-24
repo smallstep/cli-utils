@@ -1,6 +1,7 @@
 module github.com/smallstep/cli-utils
 
 go 1.22
+toolchain go1.23.6
 
 require (
 	github.com/chzyer/readline v1.5.1
@@ -11,7 +12,7 @@ require (
 	github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli v1.22.16
-	go.step.sm/crypto v0.57.1
+	go.step.sm/crypto v0.58.0
 	golang.org/x/net v0.35.0
 	golang.org/x/sys v0.30.0
 )
@@ -24,7 +25,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
-	github.com/mattn/go-isatty v0.0.11 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
