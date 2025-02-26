@@ -138,9 +138,15 @@ func WithValidateFunc(fn func(string) error) Option {
 }
 
 // WithValidateNotEmpty adds a custom validation function to a prompt that
-// checks that the propted string is not empty.
+// checks that the prompted string is not empty.
 func WithValidateNotEmpty() Option {
 	return WithValidateFunc(NotEmpty())
+}
+
+// WithValidateMinLen adds a custom validation function to a prompt that
+// checks the input string meets the minimum length requirement.
+func WithValidateMinLen(length int) Option {
+	return WithValidateFunc(MinLen(length))
 }
 
 // WithValidateYesNo adds a custom validation function to a prompt for a Yes/No
@@ -167,6 +173,6 @@ func WithValidateRegexp(re string) Option {
 		if rx.MatchString(s) {
 			return nil
 		}
-		return fmt.Errorf("%s does not match the regular expresion %s", s, re)
+		return fmt.Errorf("%s does not match the regular expression %s", s, re)
 	})
 }
