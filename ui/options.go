@@ -143,7 +143,7 @@ func WithValidateNotEmpty() Option {
 	return WithValidateFunc(NotEmpty())
 }
 
-// WithValidateMinLen adds a custom validation function to a prompt that
+// WithValidateMinLength adds a custom validation function to a prompt that
 // checks the input string meets the minimum length requirement.
 func WithValidateMinLength(minLength int) Option {
 	return WithValidateFunc(MinLength(minLength))
