@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -75,17 +74,15 @@ func YesNo() promptui.ValidateFunc {
 	}
 }
 
-// MinLen is a validation function that checks for a minimum length.
+// MinLength is a validation function that checks for a minimum length.
 // An input length <= 0 indicates that the check should not be performed.
-func MinLen(length int) promptui.ValidateFunc {
+func MinLength(minLength int) promptui.ValidateFunc {
 	return func(s string) error {
-		if length <= 0 {
+		if minLength <= 0 {
 			return nil
 		}
-		re := regexp.MustCompile(`\s+`)
-		next := re.ReplaceAllString(s, "")
-		if len(next) < length {
-			return fmt.Errorf("input does not meet minimum length requirement; must be at least %v characters", length)
+		if len(strings.TrimSpace(s)) < minLength {
+			return fmt.Errorf("input does not meet minimum length requirement; must be at least %v characters", minLength)
 		}
 		return nil
 	}

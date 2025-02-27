@@ -91,7 +91,7 @@ func TestDNS(t *testing.T) {
 	}
 }
 
-func TestMinLen(t *testing.T) {
+func TestMinLength(t *testing.T) {
 	tests := []struct {
 		name    string
 		length  int
@@ -129,23 +129,23 @@ func TestMinLen(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "ignore-whitespace-characters",
-			length:  15,
-			input:   "  p \t\n#$%@#$ a s s  ",
+			name:    "ignore-pre-post-whitespace-characters",
+			length:  5,
+			input:   "  pass  ",
 			wantErr: true,
 		},
 		{
 			name:    "ignore-whitespace-characters-ok",
-			length:  10,
-			input:   "  p \t\n#$%@#$ a s s  ",
+			length:  4,
+			input:   "  pass  ",
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotErr := MinLen(tt.length)(tt.input) != nil
+			gotErr := MinLength(tt.length)(tt.input) != nil
 			if gotErr != tt.wantErr {
-				t.Errorf("MinLen(%v)(%s) = %v, want %v", tt.length, tt.input, gotErr, tt.wantErr)
+				t.Errorf("MinLength(%v)(%s) = %v, want %v", tt.length, tt.input, gotErr, tt.wantErr)
 			}
 		})
 	}

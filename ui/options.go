@@ -145,8 +145,8 @@ func WithValidateNotEmpty() Option {
 
 // WithValidateMinLen adds a custom validation function to a prompt that
 // checks the input string meets the minimum length requirement.
-func WithValidateMinLen(length int) Option {
-	return WithValidateFunc(MinLen(length))
+func WithValidateMinLength(minLength int) Option {
+	return WithValidateFunc(MinLength(minLength))
 }
 
 // WithValidateYesNo adds a custom validation function to a prompt for a Yes/No
