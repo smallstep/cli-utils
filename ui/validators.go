@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"unicode"
 
 	"github.com/manifoldco/promptui"
 )
@@ -71,5 +72,19 @@ func YesNo() promptui.ValidateFunc {
 		default:
 			return fmt.Errorf("%s is not a valid answer", s)
 		}
+	}
+}
+
+// MinLength is a validation function that checks for a minimum length.
+// An input length <= 0 indicates that the check should not be performed.
+func MinLength(minLength int) promptui.ValidateFunc {
+	return func(s string) error {
+		if minLength <= 0 {
+			return nil
+		}
+		if len(strings.TrimRightFunc(s, unicode.IsSpace)) < minLength {
+			return fmt.Errorf("input does not meet minimum length requirement; must be at least %v characters", minLength)
+		}
+		return nil
 	}
 }

@@ -90,3 +90,63 @@ func TestDNS(t *testing.T) {
 		})
 	}
 }
+
+func TestMinLength(t *testing.T) {
+	tests := []struct {
+		name    string
+		length  int
+		input   string
+		wantErr bool
+	}{
+		{
+			name:    "negative",
+			length:  -5,
+			input:   "foobar",
+			wantErr: false,
+		},
+		{
+			name:    "zero",
+			length:  0,
+			input:   "localhost",
+			wantErr: false,
+		},
+		{
+			name:    "greater-than-min-length",
+			length:  5,
+			input:   "foobar",
+			wantErr: false,
+		},
+		{
+			name:    "equal-min-length",
+			length:  6,
+			input:   "foobar",
+			wantErr: false,
+		},
+		{
+			name:    "less-than-min-length",
+			length:  8,
+			input:   "foobar",
+			wantErr: true,
+		},
+		{
+			name:    "ignore-post-whitespace-characters",
+			length:  7,
+			input:   "  pass  ",
+			wantErr: true,
+		},
+		{
+			name:    "ignore-post-whitespace-characters-ok",
+			length:  6,
+			input:   "  pass  ",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotErr := MinLength(tt.length)(tt.input) != nil
+			if gotErr != tt.wantErr {
+				t.Errorf("MinLength(%v)(%s) = %v, want %v", tt.length, tt.input, gotErr, tt.wantErr)
+			}
+		})
+	}
+}
