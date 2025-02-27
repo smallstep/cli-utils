@@ -129,14 +129,14 @@ func TestMinLength(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "ignore-pre-post-whitespace-characters",
-			length:  5,
+			name:    "ignore-post-whitespace-characters",
+			length:  7,
 			input:   "  pass  ",
 			wantErr: true,
 		},
 		{
-			name:    "ignore-whitespace-characters-ok",
-			length:  4,
+			name:    "ignore-post-whitespace-characters-ok",
+			length:  6,
 			input:   "  pass  ",
 			wantErr: false,
 		},

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"unicode"
 
 	"github.com/manifoldco/promptui"
 )
@@ -81,7 +82,7 @@ func MinLength(minLength int) promptui.ValidateFunc {
 		if minLength <= 0 {
 			return nil
 		}
-		if len(strings.TrimSpace(s)) < minLength {
+		if len(strings.TrimRightFunc(s, unicode.IsSpace)) < minLength {
 			return fmt.Errorf("input does not meet minimum length requirement; must be at least %v characters", minLength)
 		}
 		return nil
