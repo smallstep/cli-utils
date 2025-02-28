@@ -14,6 +14,7 @@ type options struct {
 	value           string
 	allowEdit       bool
 	printTemplate   string
+	minLength       int
 	promptTemplates *promptui.PromptTemplates
 	selectTemplates *promptui.SelectTemplates
 	validateFunc    promptui.ValidateFunc
@@ -109,6 +110,15 @@ func WithAllowEdit(b bool) Option {
 	}
 }
 
+// WithMinLength sets a minimum length requirement that will be verified
+// at the time when the prompt is run.
+// checks the input string meets the minimum length requirement.
+func WithMinLength(minLength int) Option {
+	return func(o *options) {
+		o.minLength = minLength
+	}
+}
+
 // WithPrintTemplate sets the template to use on the print methods.
 func WithPrintTemplate(template string) Option {
 	return func(o *options) {
@@ -141,12 +151,6 @@ func WithValidateFunc(fn func(string) error) Option {
 // checks that the prompted string is not empty.
 func WithValidateNotEmpty() Option {
 	return WithValidateFunc(NotEmpty())
-}
-
-// WithValidateMinLength adds a custom validation function to a prompt that
-// checks the input string meets the minimum length requirement.
-func WithValidateMinLength(minLength int) Option {
-	return WithValidateFunc(MinLength(minLength))
 }
 
 // WithValidateYesNo adds a custom validation function to a prompt for a Yes/No

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
@@ -203,11 +204,31 @@ func PromptPassword(label string, opts ...Option) ([]byte, error) {
 		Validate:  o.validateFunc,
 		Templates: o.promptTemplates,
 	}
-	pass, err := prompt.Run()
+
+	pass, err := runPrompt(prompt.Run, o)
 	if err != nil {
-		return nil, errors.Wrap(err, "error reading password")
+		return nil, err
 	}
 	return []byte(pass), nil
+}
+
+// runPrompt is a helper for the method prompt.Run. This helper will loop the
+// prompt indefinitely while the input does not meet a minimum length requirement.
+func runPrompt(run func() (string, error), opts *options) (string, error) {
+	for {
+		pass, err := run()
+		if err != nil {
+			return "", errors.Wrap(err, "error reading password")
+		}
+
+		pass = strings.TrimRightFunc(pass, unicode.IsSpace)
+
+		if opts.minLength <= 0 || len(pass) >= opts.minLength {
+			return pass, nil
+		}
+
+		fmt.Printf(">>> input does not meet minimum length requirement; must be at least %v characters\n", opts.minLength)
+	}
 }
 
 // PromptPasswordGenerate creates and runs a promptui.Prompt with the given label.
