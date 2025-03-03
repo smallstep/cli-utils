@@ -61,8 +61,8 @@ github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf
 github.com/urfave/cli v1.22.16 h1:MH0k6uJxdwdeWQTwhSO42Pwr4YLrNLwBtg1MRgTqPdQ=
 github.com/urfave/cli v1.22.16/go.mod h1:EeJR6BKodywf4zciqrdw6hpCPk68JO9z5LazXZMn5Po=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-go.step.sm/crypto v0.58.0 h1:PrrtM9fP8Y7A7193WnZDu2bqEZu7jc7M8+CCkDarMtw=
-go.step.sm/crypto v0.58.0/go.mod h1:yluOL5OqY7mXGGQ7JUmAv/6h8T8Ge3yXdlEESWHOqDQ=
+go.step.sm/crypto v0.59.0 h1:BDEbdyYJpp0yOSx7dmT+9git2/BXfkCsCzJKOj3v9RI=
+go.step.sm/crypto v0.59.0/go.mod h1:wz5S8Q0NI/x22TIWQxdGD+ioHa+ge2FbkcPmbXUzNao=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.19.0/go.mod h1:Iy9bg/ha4yyC70EfRS8jz+B6ybOBKMaSxLj6P6oBDfU=
