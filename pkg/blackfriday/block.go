@@ -11,7 +11,7 @@
 // Functions to parse block-level elements.
 //
 
-//nolint:gocritic,revive,ineffassign,gosimple,wastedassign // ignore blackfriday
+//nolint:gocritic,revive,ineffassign,gosimple,wastedassign,staticcheck // ignore blackfriday
 package blackfriday
 
 import (
