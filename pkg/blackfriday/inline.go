@@ -11,7 +11,7 @@
 // Functions to parse inline elements.
 //
 
-//nolint:gocritic,whitespace,wastedassign,revive // ignore blackfriday
+//nolint:gocritic,whitespace,wastedassign,revive,staticcheck // ignore blackfriday
 package blackfriday
 
 import (
