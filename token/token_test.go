@@ -196,11 +196,7 @@ func TestGenerateKeyID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, err := randutil.Salt(64)
-	if err != nil {
-		t.Fatal(err)
-	}
-	badKey := ed25519.PublicKey(b)
+	badKey := ed25519.PublicKey(randutil.Salt(64))
 
 	tests := []struct {
 		name    string

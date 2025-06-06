@@ -240,11 +240,7 @@ func PromptPasswordGenerate(label string, opts ...Option) ([]byte, error) {
 	if err != nil || len(pass) > 0 {
 		return pass, err
 	}
-	passString, err := randutil.Alphanumeric(32)
-	if err != nil {
-		return nil, err
-	}
-	passString, err = Prompt("Password", WithDefaultValue(passString), WithAllowEdit(true), WithValidateNotEmpty())
+	passString, err := Prompt("Password", WithDefaultValue(randutil.Alphanumeric(32)), WithAllowEdit(true), WithValidateNotEmpty())
 	if err != nil {
 		return nil, err
 	}
