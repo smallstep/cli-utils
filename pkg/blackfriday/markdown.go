@@ -5,7 +5,7 @@
 // Distributed under the Simplified BSD License.
 // See README.md for details.
 
-//nolint:gocritic,wastedassign,unused,revive,govet // ignore blackfriday
+//nolint:gocritic,wastedassign,unused,govet // ignore blackfriday
 package blackfriday
 
 import (
