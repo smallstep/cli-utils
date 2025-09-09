@@ -192,36 +192,36 @@ func (r *Renderer) RenderNode(w io.Writer, node *md.Node, entering bool) md.Walk
 			r.write(node.Literal)
 		} else {
 			s := strings.ReplaceAll(string(node.Literal), "\n", "\n"+strings.Repeat(" ", r.depth))
-			r.printf(s)
+			r.printf("%s", s)
 		}
 	case md.Heading:
 		if entering {
-			r.printf(ansi.ColorCode("default+bh"))
+			r.printf("%s", ansi.ColorCode("default+bh"))
 		} else {
 			r.printf(ansi.Reset)
 			r.printf("\n")
 		}
 	case md.Link:
 		if entering {
-			r.printf(ansi.ColorCode("default+b"))
+			r.printf("%s", ansi.ColorCode("default+b"))
 			//r.printf("\033[2m") // Dim
 		} else {
 			r.printf(ansi.Reset)
 		}
 	case md.Strong:
 		if entering {
-			r.printf(ansi.ColorCode("default+bh"))
+			r.printf("%s", ansi.ColorCode("default+bh"))
 		} else {
 			r.printf(ansi.Reset)
 		}
 	case md.Emph:
 		if entering {
-			r.printf(ansi.ColorCode("default+u"))
+			r.printf("%s", ansi.ColorCode("default+u"))
 		} else {
 			r.printf(ansi.Reset)
 		}
 	case md.Code:
-		r.printf(ansi.ColorCode("default+u"))
+		r.printf("%s", ansi.ColorCode("default+u"))
 		r.write(node.Literal)
 		r.printf(ansi.Reset)
 	case md.List:
@@ -323,7 +323,7 @@ func (r *Renderer) RenderNode(w io.Writer, node *md.Node, entering bool) md.Walk
 		if entering {
 			r.capture(r.out.mode)
 		} else {
-			// Markdown doens't have a way to create a table without headers.
+			// Markdown doesn't have a way to create a table without headers.
 			// We've opted to fix that here by not rendering headers at all if
 			// they're empty.
 			result := r.finishCapture().Bytes()
@@ -332,7 +332,7 @@ func (r *Renderer) RenderNode(w io.Writer, node *md.Node, entering bool) md.Walk
 				for i := 0; i < len(parts); i++ {
 					parts[i] = "\xff" + ansi.ColorCode("default+bh") + "\xff" + parts[i] + "\xff" + ansi.Reset + "\xff"
 				}
-				r.printf(strings.Join(parts, "\t") + "\t\n")
+				r.printf("%s\t\n", strings.Join(parts, "\t"))
 			}
 		}
 	case md.TableRow:
