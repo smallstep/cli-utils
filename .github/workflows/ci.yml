@@ -16,3 +16,4 @@ jobs:
       only-latest-golang: false
       run-build: false
       run-codeql: true
+      codeql-build-cmd: 'go build ./...'
