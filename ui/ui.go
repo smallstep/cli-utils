@@ -11,7 +11,26 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"go.step.sm/crypto/randutil"
+	"golang.org/x/term"
 )
+
+// CanPrompt returns true if the current environment supports interactive
+// prompts. It checks if stdin is a terminal, or if /dev/tty is available.
+// This function should be called before attempting to prompt for user input
+// to provide better error messages in non-interactive environments like
+// systemd services, GitHub Actions, or Docker containers.
+func CanPrompt() bool {
+	// First check if stdin is a terminal
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		return true
+	}
+	// Fall back to checking if /dev/tty is available
+	if tty, err := os.Open("/dev/tty"); err == nil {
+		tty.Close()
+		return true
+	}
+	return false
+}
 
 // stderr implements an io.WriteCloser that skips the terminal bell character
 // (ASCII code 7), and writes the rest to os.Stderr. It's used to replace
@@ -299,7 +318,7 @@ func preparePromptTerminal() (func(), error) {
 	if !readline.DefaultIsTerminal() {
 		tty, err := os.Open("/dev/tty")
 		if err != nil {
-			return nothing, errors.Wrap(err, "error allocating terminal")
+			return nothing, errors.New("cannot perform interactive prompts: no terminal available (running in non-interactive environment like systemd, CI, or Docker?)")
 		}
 		clean := func() {
 			tty.Close()
@@ -329,7 +348,7 @@ func prepareSelectTerminal() (func(), error) {
 	if !readline.DefaultIsTerminal() {
 		tty, err := os.Open("/dev/tty")
 		if err != nil {
-			return nothing, errors.Wrap(err, "error allocating terminal")
+			return nothing, errors.New("cannot perform interactive selection: no terminal available (running in non-interactive environment like systemd, CI, or Docker?)")
 		}
 		clean := func() {
 			tty.Close()

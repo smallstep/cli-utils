@@ -14,6 +14,7 @@ require (
 	go.step.sm/crypto v0.75.0
 	golang.org/x/net v0.49.0
 	golang.org/x/sys v0.40.0
+	golang.org/x/term v0.39.0
 )
 
 require (
