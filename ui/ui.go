@@ -19,7 +19,14 @@ import (
 // This function should be called before attempting to prompt for user input
 // to provide better error messages in non-interactive environments like
 // systemd services, GitHub Actions, or Docker containers.
+//
+// If the STEP_NON_INTERACTIVE environment variable is set to "1" or "true",
+// this function returns false regardless of terminal availability.
 func CanPrompt() bool {
+	// Check if non-interactive mode is explicitly requested
+	if v := os.Getenv("STEP_NON_INTERACTIVE"); v == "1" || v == "true" {
+		return false
+	}
 	// First check if stdin is a terminal
 	if isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd()) {
 		return true
@@ -172,6 +179,11 @@ func Prompt(label string, opts ...Option) (string, error) {
 		return o.getValue()
 	}
 
+	// Check if prompting is possible
+	if !CanPrompt() {
+		return "", errors.New("cannot prompt for input: terminal not available or non-interactive mode enabled")
+	}
+
 	// Prompt using the terminal
 	clean, err := preparePromptTerminal()
 	if err != nil {
@@ -206,6 +218,11 @@ func PromptPassword(label string, opts ...Option) ([]byte, error) {
 	// Return value if set
 	if o.value != "" {
 		return o.getValueBytes()
+	}
+
+	// Check if prompting is possible
+	if !CanPrompt() {
+		return nil, errors.New("cannot prompt for password: terminal not available or non-interactive mode enabled")
 	}
 
 	// Prompt using the terminal
@@ -294,6 +311,11 @@ func Select(label string, items interface{}, opts ...Option) (int, string, error
 		selectTemplates: SelectTemplates(label),
 	}
 	o.apply(opts)
+
+	// Check if prompting is possible
+	if !CanPrompt() {
+		return 0, "", errors.New("cannot prompt for selection: terminal not available or non-interactive mode enabled")
+	}
 
 	clean, err := prepareSelectTerminal()
 	if err != nil {
