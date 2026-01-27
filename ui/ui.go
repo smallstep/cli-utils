@@ -9,9 +9,9 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
+	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"go.step.sm/crypto/randutil"
-	"golang.org/x/term"
 )
 
 // CanPrompt returns true if the current environment supports interactive
@@ -21,7 +21,7 @@ import (
 // systemd services, GitHub Actions, or Docker containers.
 func CanPrompt() bool {
 	// First check if stdin is a terminal
-	if term.IsTerminal(int(os.Stdin.Fd())) {
+	if isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd()) {
 		return true
 	}
 	// Fall back to checking if /dev/tty is available
