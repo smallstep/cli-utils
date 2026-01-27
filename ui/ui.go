@@ -318,7 +318,7 @@ func preparePromptTerminal() (func(), error) {
 	if !readline.DefaultIsTerminal() {
 		tty, err := os.Open("/dev/tty")
 		if err != nil {
-			return nothing, errors.New("cannot perform interactive prompts: no terminal available (running in non-interactive environment like systemd, CI, or Docker?)")
+			return nothing, errors.New("cannot offer interactive prompts: no terminal is available")
 		}
 		clean := func() {
 			tty.Close()
@@ -348,7 +348,7 @@ func prepareSelectTerminal() (func(), error) {
 	if !readline.DefaultIsTerminal() {
 		tty, err := os.Open("/dev/tty")
 		if err != nil {
-			return nothing, errors.New("cannot perform interactive selection: no terminal available (running in non-interactive environment like systemd, CI, or Docker?)")
+			return nothing, errors.New("cannot offer interactive selection: no terminal is available")
 		}
 		clean := func() {
 			tty.Close()
