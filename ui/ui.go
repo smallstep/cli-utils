@@ -181,7 +181,7 @@ func Prompt(label string, opts ...Option) (string, error) {
 
 	// Check if prompting is possible
 	if !CanPrompt() {
-		return "", errors.New("cannot prompt for input: terminal not available or non-interactive mode enabled")
+		return "", o.nonInteractiveError("input")
 	}
 
 	// Prompt using the terminal
@@ -222,7 +222,7 @@ func PromptPassword(label string, opts ...Option) ([]byte, error) {
 
 	// Check if prompting is possible
 	if !CanPrompt() {
-		return nil, errors.New("cannot prompt for password: terminal not available or non-interactive mode enabled")
+		return nil, o.nonInteractiveError("password")
 	}
 
 	// Prompt using the terminal
@@ -314,7 +314,7 @@ func Select(label string, items interface{}, opts ...Option) (int, string, error
 
 	// Check if prompting is possible
 	if !CanPrompt() {
-		return 0, "", errors.New("cannot prompt for selection: terminal not available or non-interactive mode enabled")
+		return 0, "", o.nonInteractiveError("selection")
 	}
 
 	clean, err := prepareSelectTerminal()
