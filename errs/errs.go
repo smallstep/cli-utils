@@ -328,20 +328,3 @@ func FileError(err error, filename string) error {
 type FriendlyError interface {
 	Message() string
 }
-
-// RequiredInputError is returned when a prompt for FieldName is required but no terminal is
-// available. It provides a helpful error message indicating which Flag can be
-// used to provide the value non-interactively.
-type RequiredInputError struct {
-	FieldName string
-}
-
-func (e *RequiredInputError) Error() string {
-	return fmt.Sprintf("cannot prompt for %s: no terminal available. Run with --help to find flags for providing this value non-interactively", e.FieldName)
-}
-
-func NewRequiredInputError(fieldName string) *RequiredInputError {
-	return &RequiredInputError{
-		FieldName: fieldName,
-	}
-}
