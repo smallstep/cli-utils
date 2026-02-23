@@ -10,6 +10,7 @@ import (
 	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+
 	"go.step.sm/crypto/randutil"
 )
 
@@ -305,7 +306,7 @@ func preparePromptTerminal() (func(), error) {
 			tty.Close()
 		}
 
-		fd := int(tty.Fd())
+		fd := int(tty.Fd()) // #nosec G115 -- uintptr comes from file descriptor
 		state, err := readline.MakeRaw(fd)
 		if err != nil {
 			defer clean()
@@ -335,7 +336,7 @@ func prepareSelectTerminal() (func(), error) {
 			tty.Close()
 		}
 
-		fd := int(tty.Fd())
+		fd := int(tty.Fd()) // #nosec G115 -- uintptr comes from file descriptor
 		state, err := readline.MakeRaw(fd)
 		if err != nil {
 			defer clean()

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"go.step.sm/crypto/jose"
 )
 
@@ -52,7 +53,7 @@ type Payload struct {
 	Version                 interface{}       `json:"ver"`
 	XMSMirID                string            `json:"xms_mirid"`
 	K8sSANamespace          string            `json:"kubernetes.io/serviceaccount/namespace,omitempty"`
-	K8sSASecretName         string            `json:"kubernetes.io/serviceaccount/secret.name,omitempty"`
+	K8sSASecretName         string            `json:"kubernetes.io/serviceaccount/secret.name,omitempty"` // #nosec G117 -- property used for JSON (un)marshaling
 	K8sSAServiceAccountName string            `json:"kubernetes.io/serviceaccount/service-account.name,omitempty"`
 	K8sSAServiceAccountUID  string            `json:"kubernetes.io/serviceaccount/service-account.uid,omitempty"`
 	Google                  *GCPGooglePayload `json:"google"` // GCP token claims
