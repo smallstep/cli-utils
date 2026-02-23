@@ -90,7 +90,7 @@ func (r *Renderer) write(b []byte) {
 }
 
 func (r *Renderer) printf(s string, a ...interface{}) {
-	fmt.Fprintf(r.out.w, s, a...)
+	fmt.Fprintf(r.out.w, s, a...) // #nosec G705 -- renders internal help content
 }
 
 func (r *Renderer) capture(mode RenderMode) {
