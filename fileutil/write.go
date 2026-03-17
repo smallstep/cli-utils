@@ -159,7 +159,7 @@ func PrependLine(filename string, data []byte, perm os.FileMode) error {
 		}
 	}
 
-	if err := os.WriteFile(filename, []byte(strings.Join(result, "\n")), perm); err != nil {
+	if err := os.WriteFile(filename, []byte(strings.Join(result, "\n")), perm); err != nil { // #nosec G703 -- intentional write to user-provided filename
 		return FileError(err, filename)
 	}
 	return nil
@@ -191,7 +191,7 @@ func RemoveLine(filename, substr string) error {
 		if !strings.Contains(l, substr) {
 			continue
 		}
-		if err := os.WriteFile(filename, []byte(strings.Join(append(old[:i], old[i+1:]...), "\n")), perm); err != nil {
+		if err := os.WriteFile(filename, []byte(strings.Join(append(old[:i], old[i+1:]...), "\n")), perm); err != nil { // #nosec G703 -- intentional write to user-provided filename
 			return FileError(err, filename)
 		}
 		break
