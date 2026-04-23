@@ -9,10 +9,36 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
+	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 
 	"go.step.sm/crypto/randutil"
 )
+
+// CanPrompt returns true if the current environment supports interactive
+// prompts. It checks if stdin is a terminal, or if /dev/tty is available.
+// This function should be called before attempting to prompt for user input
+// to provide better error messages in non-interactive environments like
+// systemd services, GitHub Actions, or Docker containers.
+//
+// If the STEP_NON_INTERACTIVE environment variable is set to "1" or "true",
+// this function returns false regardless of terminal availability.
+func CanPrompt() bool {
+	// Check if non-interactive mode is explicitly requested
+	if v := os.Getenv("STEP_NON_INTERACTIVE"); v == "1" || v == "true" {
+		return false
+	}
+	// First check if stdin is a terminal
+	if isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd()) {
+		return true
+	}
+	// Fall back to checking if /dev/tty is available
+	if tty, err := os.Open("/dev/tty"); err == nil {
+		tty.Close()
+		return true
+	}
+	return false
+}
 
 // stderr implements an io.WriteCloser that skips the terminal bell character
 // (ASCII code 7), and writes the rest to os.Stderr. It's used to replace
@@ -154,6 +180,11 @@ func Prompt(label string, opts ...Option) (string, error) {
 		return o.getValue()
 	}
 
+	// Check if prompting is possible
+	if !CanPrompt() {
+		return "", o.nonInteractiveError("input")
+	}
+
 	// Prompt using the terminal
 	clean, err := preparePromptTerminal()
 	if err != nil {
@@ -188,6 +219,11 @@ func PromptPassword(label string, opts ...Option) ([]byte, error) {
 	// Return value if set
 	if o.value != "" {
 		return o.getValueBytes()
+	}
+
+	// Check if prompting is possible
+	if !CanPrompt() {
+		return nil, o.nonInteractiveError("password")
 	}
 
 	// Prompt using the terminal
@@ -277,6 +313,11 @@ func Select(label string, items interface{}, opts ...Option) (int, string, error
 	}
 	o.apply(opts)
 
+	// Check if prompting is possible
+	if !CanPrompt() {
+		return 0, "", o.nonInteractiveError("selection")
+	}
+
 	clean, err := prepareSelectTerminal()
 	if err != nil {
 		return 0, "", err
@@ -300,7 +341,7 @@ func preparePromptTerminal() (func(), error) {
 	if !readline.DefaultIsTerminal() {
 		tty, err := os.Open("/dev/tty")
 		if err != nil {
-			return nothing, errors.Wrap(err, "error allocating terminal")
+			return nothing, errors.New("cannot offer interactive prompts: no terminal is available")
 		}
 		clean := func() {
 			tty.Close()
@@ -330,7 +371,7 @@ func prepareSelectTerminal() (func(), error) {
 	if !readline.DefaultIsTerminal() {
 		tty, err := os.Open("/dev/tty")
 		if err != nil {
-			return nothing, errors.Wrap(err, "error allocating terminal")
+			return nothing, errors.New("cannot offer interactive selection: no terminal is available")
 		}
 		clean := func() {
 			tty.Close()
