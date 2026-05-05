@@ -18,6 +18,8 @@ type options struct {
 	promptTemplates *promptui.PromptTemplates
 	selectTemplates *promptui.SelectTemplates
 	validateFunc    promptui.ValidateFunc
+	fieldName       string // Human-readable field description for error messages
+	flagName        string // CLI flag name for error messages
 }
 
 // apply applies the given options.
@@ -56,6 +58,19 @@ func (o *options) getValueBytes() ([]byte, error) {
 		return nil, err
 	}
 	return []byte(o.value), nil
+}
+
+// nonInteractiveError returns an appropriate error message when prompting is not
+// possible. If field and flag information was provided via WithField, the error
+// message will guide the user to the specific flag they should use.
+func (o *options) nonInteractiveError(fallbackType string) error {
+	if o.fieldName != "" && o.flagName != "" {
+		return fmt.Errorf("cannot prompt for %s: use --%s to specify this value non-interactively", o.fieldName, o.flagName)
+	}
+	if o.fieldName != "" {
+		return fmt.Errorf("cannot prompt for %s: run with --help to see flags for providing this value non-interactively", o.fieldName)
+	}
+	return fmt.Errorf("cannot prompt for %s: terminal not available or non-interactive mode enabled", fallbackType)
 }
 
 // Option is the type of the functions that modify the prompt options.
@@ -100,6 +115,17 @@ func WithSliceValue(values []string) Option {
 func WithValue(value string) Option {
 	return func(o *options) {
 		o.value = value
+	}
+}
+
+// WithField sets the field name and corresponding CLI flag for better error
+// messages when prompting is not possible in non-interactive mode. The fieldName
+// is a human-readable description (e.g., "deployment type"), and flagName is the
+// CLI flag without the leading dashes (e.g., "deployment-type").
+func WithField(fieldName, flagName string) Option {
+	return func(o *options) {
+		o.fieldName = fieldName
+		o.flagName = flagName
 	}
 }
 
