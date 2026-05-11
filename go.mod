@@ -13,7 +13,7 @@ require (
 	github.com/urfave/cli v1.22.17
 	go.step.sm/crypto v0.77.9
 	golang.org/x/net v0.53.0
-	golang.org/x/sys v0.43.0
+	golang.org/x/sys v0.44.0
 )
 
 require (
