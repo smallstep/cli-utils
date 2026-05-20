@@ -1,6 +1,6 @@
 module github.com/smallstep/cli-utils
 
-go 1.25.0
+go 1.25.1
 
 require (
 	github.com/chzyer/readline v1.5.1
@@ -11,9 +11,9 @@ require (
 	github.com/smallstep/assert v0.0.0-20200723003110-82e2b9b3b262
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli v1.22.17
-	go.step.sm/crypto v0.77.9
+	go.step.sm/crypto v0.81.0
 	golang.org/x/net v0.53.0
-	golang.org/x/sys v0.43.0
+	golang.org/x/sys v0.44.0
 )
 
 require (
