@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"runtime"
+	"unicode/utf8"
 
 	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
@@ -40,6 +41,34 @@ func init() {
 		promptui.KeyForward = readline.CharForward
 		promptui.KeyForwardDisplay = "→"
 	}
+
+	// Register trunc template function in promptui's FuncMap so all
+	// templates (label, active, inactive, selected, help) can use it.
+	promptui.FuncMap["trunc"] = truncFunc
+}
+
+// truncFunc truncates s so that the rendered line does not exceed the
+// terminal width. prefixLen is the visible character count of everything
+// that appears before the template content on the same line (icons,
+// arrows, indentation). An ellipsis "..." is appended when truncation
+// occurs.
+func truncFunc(s string, prefixLen int) string {
+	w := getTerminalWidth()
+	if w <= 0 {
+		return s
+	}
+	max := w - prefixLen
+	if max <= 0 {
+		return ""
+	}
+	n := utf8.RuneCountInString(s)
+	if n <= max {
+		return s
+	}
+	if max <= 3 {
+		return string([]rune(s)[:max])
+	}
+	return string([]rune(s)[:max-3]) + "..."
 }
 
 // PrintSelectedTemplate returns the default template used in PrintSelected.
@@ -71,11 +100,18 @@ func SimplePromptTemplates() *promptui.PromptTemplates {
 
 // SelectTemplates returns the default promptui.SelectTemplate for string
 // slices. The given name is the prompt of the selected option.
+//
+// The prefixLen values account for the visible characters before the
+// item text on each line:
+//
+//	Label:   "?" + " " + ... + ": "  → 4
+//	Active:  "▸" + " "               → 4 (incl. page arrow + space)
+//	Inactive: "  "                   → 4
 func SelectTemplates(name string) *promptui.SelectTemplates {
 	return &promptui.SelectTemplates{
-		Label:    fmt.Sprintf("%s {{ . }}: ", IconInitial),
-		Active:   fmt.Sprintf("%s {{ . | underline }}", IconSelect),
-		Inactive: "  {{ . }}",
+		Label:    fmt.Sprintf("%s {{ . | trunc 4 }}: ", IconInitial),
+		Active:   fmt.Sprintf("%s {{ . | trunc 4 | underline }}", IconSelect),
+		Inactive: "  {{ . | trunc 4 }}",
 		Selected: fmt.Sprintf(`{{ %q | green }} {{ "%s:" | bold }} {{ .Name }}`, IconGood, name),
 	}
 }
@@ -85,9 +121,9 @@ func SelectTemplates(name string) *promptui.SelectTemplates {
 // option.
 func NamedSelectTemplates(name string) *promptui.SelectTemplates {
 	return &promptui.SelectTemplates{
-		Label:    fmt.Sprintf("%s {{.Name}}: ", IconInitial),
-		Active:   fmt.Sprintf("%s {{ .Name | underline }}", IconSelect),
-		Inactive: "  {{.Name}}",
+		Label:    fmt.Sprintf("%s {{ .Name | trunc 4 }}: ", IconInitial),
+		Active:   fmt.Sprintf("%s {{ .Name | trunc 4 | underline }}", IconSelect),
+		Inactive: "  {{ .Name | trunc 4 }}",
 		Selected: fmt.Sprintf(`{{ %q | green }} {{ "%s:" | bold }} {{ .Name }}`, IconGood, name),
 	}
 }
