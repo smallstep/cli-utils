@@ -12,8 +12,8 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli v1.22.17
 	go.step.sm/crypto v0.92.0
-	golang.org/x/net v0.62.0
-	golang.org/x/sys v0.49.0
+	golang.org/x/net v0.63.0
+	golang.org/x/sys v0.50.0
 )
 
 require (
@@ -24,5 +24,5 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/crypto v0.59.0 // indirect
 )
